@@ -13,6 +13,8 @@ module.exports = (sequelize, DataTypes) => {
       encryptedPassword: DataTypes.STRING,
       avatar: DataTypes.STRING,
       role: DataTypes.STRING,
+      isAlive: DataTypes.BOOLEAN,
+      isWillComplete: DataTypes.BOOLEAN,
     },
     {
       sequelize,

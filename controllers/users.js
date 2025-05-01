@@ -1,7 +1,10 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+
 const dataBase = require("../models");
+
 const UserDB = dataBase.Users;
+const NotificationDB = dataBase.Notifications;
 
 exports.SignUp = async (req, res) => {
   try {
@@ -36,11 +39,17 @@ exports.SignUp = async (req, res) => {
         encryptedPassword,
       });
 
+      await NotificationDB.create({
+        userId: newUser.id,
+        title: "New User Sign Up",
+        description: "You account was created successfully.",
+      });
+
       res.status(200).json({ message: "User created successfully", newUser });
     }
   } catch (error) {
     console.log("Error during signup", error);
-    res.status(500).json("Internal Server Error", error);
+    return res.status(500).json("Internal Server Error", error);
   }
 };
 
@@ -54,33 +63,46 @@ exports.signIn = async (req, res) => {
         .json({ message: "Email and password are required" });
     }
 
-    const user = await Users.findOne({
-      where: { email },
-    });
+    const user = await UserDB.findOne({ where: { email } });
 
     if (!user) {
       return res.status(401).json({ message: "Email not registered!" });
     }
 
-    // Step 2: Compare password
     const isMatch = await bcrypt.compare(password, user.encryptedPassword);
     if (!isMatch) {
       return res.status(401).json({ message: "Invalid Password" });
     }
 
-    // Step 4: Generate a token
     const token = jwt.sign(
       { id: user.id, email: user.email },
       process.env.JWT_SECRET,
       { expiresIn: "10d" }
     );
 
-    // Step 5: Return the response
+    const { encryptedPassword, ...userData } = user.toJSON();
+
     return res.status(200).json({
       message: "Sign-in successful",
+      token,
+      user: userData,
     });
   } catch (error) {
-    console.log("Error during signin");
-    res.status(500).json("Internal Server Error", error);
+    console.log("Error during signin", error);
+    return res.status(500).json("Internal Server Error");
+  }
+};
+
+exports.markWillComplete = async (req, res) => {
+  try {
+    await UserDB.update(
+      { isWillComplete: true },
+      { where: { id: req.user.id } }
+    );
+
+    return res.status(200).json("User's will is now complete.");
+  } catch (err) {
+    console.log("Error during signin", error);
+    return res.status(500).json("Internal Server Error");
   }
 };

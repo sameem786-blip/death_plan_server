@@ -9,41 +9,27 @@ module.exports = {
      * Example:
      * await queryInterface.createTable('users', { id: Sequelize.INTEGER });
      */
-    await queryInterface.createTable("Users", {
+    await queryInterface.createTable("Notifications", {
       id: {
         allowNull: false,
         autoIncrement: true,
         primaryKey: true,
         type: Sequelize.INTEGER,
       },
-      firstName: {
+      userId: {
+        allowNull: false,
+        type: Sequelize.INTEGER,
+      },
+      title: {
         allowNull: false,
         type: Sequelize.STRING,
       },
-      lastName: {
+      description: {
         allowNull: false,
         type: Sequelize.STRING,
       },
-      email: {
+      isRead: {
         allowNull: false,
-        type: Sequelize.STRING,
-      },
-      encryptedPassword: {
-        allowNull: false,
-        type: Sequelize.STRING,
-      },
-      avatar: {
-        type: Sequelize.STRING,
-      },
-      role: {
-        allowNull: false,
-        type: Sequelize.STRING,
-      },
-      isAlive: {
-        type: Sequelize.BOOLEAN,
-        defaultValue: true,
-      },
-      isWillComplete: {
         type: Sequelize.BOOLEAN,
         defaultValue: false,
       },
