@@ -2,9 +2,11 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
 const dataBase = require("../models");
+const { createNotification } = require("./notifications");
 
 const UserDB = dataBase.Users;
 const NotificationDB = dataBase.Notifications;
+const Land_RealEstate_EstateDB = dataBase.Land_RealEstate_Estates;
 
 exports.SignUp = async (req, res) => {
   try {
@@ -39,11 +41,11 @@ exports.SignUp = async (req, res) => {
         encryptedPassword,
       });
 
-      await NotificationDB.create({
-        userId: newUser.id,
-        title: "New User Sign Up",
-        description: "You account was created successfully.",
-      });
+      await createNotification(
+        newUser.id,
+        "New User Sign Up",
+        "You account was created successfully."
+      );
 
       res.status(200).json({ message: "User created successfully", newUser });
     }
@@ -63,7 +65,10 @@ exports.signIn = async (req, res) => {
         .json({ message: "Email and password are required" });
     }
 
-    const user = await UserDB.findOne({ where: { email } });
+    const user = await UserDB.findOne({
+      where: { email },
+      include: [{ model: Land_RealEstate_EstateDB }],
+    });
 
     if (!user) {
       return res.status(401).json({ message: "Email not registered!" });
@@ -103,6 +108,22 @@ exports.markWillComplete = async (req, res) => {
     return res.status(200).json("User's will is now complete.");
   } catch (err) {
     console.log("Error during signin", error);
+    return res.status(500).json("Internal Server Error");
+  }
+};
+
+exports.getUserById = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const user = await UserDB.findOne({
+      where: {
+        id: userId,
+      },
+      include: [{ model: Land_RealEstate_EstateDB }],
+    });
+  } catch (error) {
+    console.log("Error fetching user", error);
     return res.status(500).json("Internal Server Error");
   }
 };

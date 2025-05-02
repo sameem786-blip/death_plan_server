@@ -20,6 +20,21 @@ exports.getAllUserNotifications = async (req, res) => {
   }
 };
 
+exports.createNotification = async (userId, title, description) => {
+  try {
+    await NotificationDB.create({
+      userId: userId,
+      title: title,
+      description: description,
+    });
+
+    return;
+  } catch (error) {
+    console.log("Error fetching Notifications", error);
+    return;
+  }
+};
+
 exports.markRead = async (req, res) => {
   try {
     const notificationId = req.params.notificationId;
