@@ -10,4 +10,10 @@ router.post(
   EstateController.saveLandRealEstate
 );
 
+router.post(
+  "/save/vehicleRealEstate",
+  authMiddleware,
+  EstateController.saveVehicleRealEstate
+);
+
 module.exports = router;

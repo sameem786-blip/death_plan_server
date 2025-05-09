@@ -7,6 +7,7 @@ const { createNotification } = require("./notifications");
 const UserDB = dataBase.Users;
 const NotificationDB = dataBase.Notifications;
 const Land_RealEstate_EstateDB = dataBase.Land_RealEstate_Estates;
+const VehicleRealEstateEstateDB = dataBase.Vehicle_RealEstate_Estates;
 
 exports.SignUp = async (req, res) => {
   try {
@@ -67,7 +68,10 @@ exports.signIn = async (req, res) => {
 
     const user = await UserDB.findOne({
       where: { email },
-      include: [{ model: Land_RealEstate_EstateDB }],
+      include: [
+        { model: Land_RealEstate_EstateDB },
+        { model: VehicleRealEstateEstateDB },
+      ],
     });
 
     if (!user) {
