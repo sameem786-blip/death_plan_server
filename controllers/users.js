@@ -13,7 +13,7 @@ exports.SignUp = async (req, res) => {
   try {
     const { firstName, lastName, password, avatar, email } = req.body;
 
-    if (!firstName || !lastName || !password || !avatar || !email) {
+    if (!password || !email) {
       res.status(400).json("Missing fields");
     } else {
       const existingUser = await UserDB.findOne({
@@ -34,9 +34,6 @@ exports.SignUp = async (req, res) => {
       console.log("Pass", encryptedPassword);
 
       const newUser = await UserDB.create({
-        firstName,
-        lastName,
-        avatar,
         email,
         role,
         encryptedPassword,
@@ -68,10 +65,6 @@ exports.signIn = async (req, res) => {
 
     const user = await UserDB.findOne({
       where: { email },
-      include: [
-        { model: Land_RealEstate_EstateDB },
-        { model: VehicleRealEstateEstateDB },
-      ],
     });
 
     if (!user) {
@@ -102,6 +95,40 @@ exports.signIn = async (req, res) => {
   }
 };
 
+exports.getUserById = async (req, res) => {
+  try {
+    const userId = req.params.id;
+
+    const user = await UserDB.findOne({
+      where: {
+        id: userId,
+      },
+    });
+
+    return res.status(200).json({ user });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json("Internal Server Error");
+  }
+};
+
+exports.updateUser = async (req, res) => {
+  try {
+    const userId = req.params.id;
+
+    console.log("User", req.body);
+
+    await UserDB.update(req.body, { where: { id: userId } });
+
+    res.status(200).json({
+      message: "User updated successfully",
+    });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json("Internal Server Error");
+  }
+};
+
 exports.markWillComplete = async (req, res) => {
   try {
     await UserDB.update(
@@ -112,22 +139,6 @@ exports.markWillComplete = async (req, res) => {
     return res.status(200).json("User's will is now complete.");
   } catch (err) {
     console.log("Error during signin", error);
-    return res.status(500).json("Internal Server Error");
-  }
-};
-
-exports.getUserById = async (req, res) => {
-  try {
-    const userId = req.user.id;
-
-    const user = await UserDB.findOne({
-      where: {
-        id: userId,
-      },
-      include: [{ model: Land_RealEstate_EstateDB }],
-    });
-  } catch (error) {
-    console.log("Error fetching user", error);
     return res.status(500).json("Internal Server Error");
   }
 };

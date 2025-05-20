@@ -21,7 +21,9 @@ module.exports = {
         type: Sequelize.STRING,
       },
       lastName: {
-        allowNull: false,
+        type: Sequelize.STRING,
+      },
+      fullName: {
         type: Sequelize.STRING,
       },
       email: {
@@ -29,7 +31,6 @@ module.exports = {
         type: Sequelize.STRING,
       },
       encryptedPassword: {
-        allowNull: false,
         type: Sequelize.STRING,
       },
       avatar: {
@@ -39,11 +40,19 @@ module.exports = {
         allowNull: false,
         type: Sequelize.STRING,
       },
+      gender: {
+        allowNull: false,
+        type: Sequelize.STRING,
+      },
       isAlive: {
         type: Sequelize.BOOLEAN,
         defaultValue: true,
       },
       isWillComplete: {
+        type: Sequelize.BOOLEAN,
+        defaultValue: false,
+      },
+      isWillStarted: {
         type: Sequelize.BOOLEAN,
         defaultValue: false,
       },
