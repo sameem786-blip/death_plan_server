@@ -7,6 +7,12 @@ module.exports = (sequelize, DataTypes) => {
       Users.hasMany(models.Vehicle_RealEstate_Estates, {
         foreignKey: "userId",
       });
+      Users.hasMany(models.Beneficiaries, {
+        foreignKey: "userId",
+      });
+      Users.hasOne(models.Subscriptions, {
+        foreignKey: "userId",
+      });
     }
   }
 
@@ -27,6 +33,9 @@ module.exports = (sequelize, DataTypes) => {
       gender: DataTypes.STRING,
       contact: DataTypes.STRING,
       bio: DataTypes.STRING,
+      packageId: DataTypes.STRING,
+      subscribed: DataTypes.BOOLEAN,
+      stripeCustomerId: DataTypes.STRING,
     },
     {
       sequelize,

@@ -5,6 +5,8 @@ const dataBase = require("../models");
 const { createNotification } = require("./notifications");
 
 const UserDB = dataBase.Users;
+const BeneficiaryDB = dataBase.Beneficiaries;
+const SubscriptionsDB = dataBase.Subscriptions;
 const NotificationDB = dataBase.Notifications;
 const Land_RealEstate_EstateDB = dataBase.Land_RealEstate_Estates;
 const VehicleRealEstateEstateDB = dataBase.Vehicle_RealEstate_Estates;
@@ -65,6 +67,11 @@ exports.signIn = async (req, res) => {
 
     const user = await UserDB.findOne({
       where: { email },
+      include: [
+        {
+          model: BeneficiaryDB,
+        },
+      ],
     });
 
     if (!user) {
@@ -103,6 +110,14 @@ exports.getUserById = async (req, res) => {
       where: {
         id: userId,
       },
+      include: [
+        {
+          model: BeneficiaryDB,
+        },
+        {
+          model: SubscriptionsDB,
+        },
+      ],
     });
 
     return res.status(200).json({ user });
@@ -129,6 +144,45 @@ exports.updateUser = async (req, res) => {
   }
 };
 
+exports.deleteWill = async (req, res) => {
+  try {
+    const user = await UserDB.findOne({
+      where: {
+        id: req.user.id,
+      },
+    });
+
+    user.isWillComplete = false;
+    user.isWillStarted = false;
+
+    await user.save();
+
+    await BeneficiaryDB.destroy({
+      where: {
+        userId: user.id,
+      },
+    });
+
+    return res.status(200).json("Will destroyed");
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json("Internal Server Error");
+  }
+};
+
+exports.markWillStarted = async (req, res) => {
+  try {
+    await UserDB.update(
+      { isWillStarted: true },
+      { where: { id: req.user.id } }
+    );
+
+    return res.status(200).json("User's will is now marked as started.");
+  } catch (error) {
+    console.log("Error during signin", error);
+    return res.status(500).json("Internal Server Error");
+  }
+};
 exports.markWillComplete = async (req, res) => {
   try {
     await UserDB.update(

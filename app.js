@@ -8,6 +8,8 @@ const userRoutes = require("./routes/users");
 const notificationRoutes = require("./routes/notifications");
 const uploadRoutes = require("./routes/fileUpload");
 const estatesRoute = require("./routes/estates");
+const BeneficiariesRoute = require("./routes/beneficiaries");
+const SubscriptionsRoute = require("./routes/subscriptions");
 
 app.use(cors());
 app.use(bodyParser.json());
@@ -17,6 +19,8 @@ app.use("/api/user", userRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/estates", estatesRoute);
 app.use("/api/aws", uploadRoutes);
+app.use("/api/beneficiaries", BeneficiariesRoute);
+app.use("/api/subscriptions", SubscriptionsRoute);
 
 app.get("/", (req, res) => res.send("Death Plan APIs is running!"));
 
