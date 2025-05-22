@@ -7,9 +7,9 @@ const { createNotification } = require("./notifications");
 const UserDB = dataBase.Users;
 const BeneficiaryDB = dataBase.Beneficiaries;
 const SubscriptionsDB = dataBase.Subscriptions;
+const PackagesDB = dataBase.Packages;
 const NotificationDB = dataBase.Notifications;
-const Land_RealEstate_EstateDB = dataBase.Land_RealEstate_Estates;
-const VehicleRealEstateEstateDB = dataBase.Vehicle_RealEstate_Estates;
+const EstatesDB = dataBase.UserEstates;
 
 exports.SignUp = async (req, res) => {
   try {
@@ -71,6 +71,17 @@ exports.signIn = async (req, res) => {
         {
           model: BeneficiaryDB,
         },
+        {
+          model: EstatesDB,
+        },
+        {
+          model: SubscriptionsDB,
+          include: [
+            {
+              model: PackagesDB,
+            },
+          ],
+        },
       ],
     });
 
@@ -115,7 +126,15 @@ exports.getUserById = async (req, res) => {
           model: BeneficiaryDB,
         },
         {
+          model: EstatesDB,
+        },
+        {
           model: SubscriptionsDB,
+          include: [
+            {
+              model: PackagesDB,
+            },
+          ],
         },
       ],
     });

@@ -22,7 +22,7 @@ module.exports = {
       },
 
       packageId: {
-        type: Sequelize.STRING,
+        type: Sequelize.INTEGER,
       },
 
       createdAt: {

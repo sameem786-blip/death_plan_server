@@ -2,7 +2,9 @@
 const { Model } = require("sequelize");
 module.exports = (sequelize, DataTypes) => {
   class Packages extends Model {
-    static associate(models) {}
+    static associate(models) {
+      Packages.hasOne(models.Subscriptions, { foreignKey: "packageId" });
+    }
   }
 
   Packages.init(

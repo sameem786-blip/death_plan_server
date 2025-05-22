@@ -98,6 +98,9 @@ exports.createPaymentIntent = async (req, res) => {
       packageId,
     });
 
+    user.subscribed = true;
+    await user.save();
+
     return res.status(200).json("subscribed successfully.");
   } catch (error) {
     console.error("Stripe subscription error:", error);
