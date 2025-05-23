@@ -10,6 +10,9 @@ const uploadRoutes = require("./routes/fileUpload");
 const estatesRoute = require("./routes/estates");
 const BeneficiariesRoute = require("./routes/beneficiaries");
 const SubscriptionsRoute = require("./routes/subscriptions");
+const DebtsRoute = require("./routes/debts");
+const InsurancesRoute = require("./routes/insurances");
+const MedicalEmergenciesRoute = require("./routes/medicalemergencies");
 
 app.use(cors());
 app.use(bodyParser.json());
@@ -18,9 +21,12 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use("/api/user", userRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/estates", estatesRoute);
+app.use("/api/debts", DebtsRoute);
 app.use("/api/aws", uploadRoutes);
 app.use("/api/beneficiaries", BeneficiariesRoute);
 app.use("/api/subscriptions", SubscriptionsRoute);
+app.use("/api/insurances", InsurancesRoute);
+app.use("/api/medical-emergency", MedicalEmergenciesRoute);
 
 app.get("/", (req, res) => res.send("Death Plan APIs is running!"));
 

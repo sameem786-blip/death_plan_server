@@ -10,6 +10,9 @@ const SubscriptionsDB = dataBase.Subscriptions;
 const PackagesDB = dataBase.Packages;
 const NotificationDB = dataBase.Notifications;
 const EstatesDB = dataBase.UserEstates;
+const DebtsDB = dataBase.UserDebts;
+const InsuranceDB = dataBase.UserInsurances;
+const MedicalEmergencyeDB = dataBase.UserMedicalEmergencies;
 
 exports.SignUp = async (req, res) => {
   try {
@@ -75,6 +78,15 @@ exports.signIn = async (req, res) => {
           model: EstatesDB,
         },
         {
+          model: DebtsDB,
+        },
+        {
+          model: InsuranceDB,
+        },
+        {
+          model: MedicalEmergencyeDB,
+        },
+        {
           model: SubscriptionsDB,
           include: [
             {
@@ -129,6 +141,15 @@ exports.getUserById = async (req, res) => {
           model: EstatesDB,
         },
         {
+          model: DebtsDB,
+        },
+        {
+          model: InsuranceDB,
+        },
+        {
+          model: MedicalEmergencyeDB,
+        },
+        {
           model: SubscriptionsDB,
           include: [
             {
@@ -150,9 +171,36 @@ exports.updateUser = async (req, res) => {
   try {
     const userId = req.params.id;
 
+    const user = await UserDB.findByPk(userId);
+
     console.log("User", req.body);
 
-    await UserDB.update(req.body, { where: { id: userId } });
+    const userToUpdate = {
+      fullName: req.body.fullName,
+      email: req.body.email,
+      contact: req.body.contact,
+      gender: req.body.gender,
+    };
+
+    if (req.body.newPassword && req.body.currentPassword) {
+      const isMatch = await bcrypt.compare(
+        req.body.currentPassword,
+        user.encryptedPassword
+      );
+
+      if (isMatch) {
+        const encryptedPassword = await bcrypt.hash(
+          req.body.newPassword,
+          parseInt(process.env.ENCRYPTION_SALT)
+        );
+
+        userToUpdate.encryptedPassword = encryptedPassword;
+      } else {
+        return res.status(400).json("Password does not match");
+      }
+    }
+
+    await UserDB.update(userToUpdate, { where: { id: userId } });
 
     res.status(200).json({
       message: "User updated successfully",
@@ -177,6 +225,26 @@ exports.deleteWill = async (req, res) => {
     await user.save();
 
     await BeneficiaryDB.destroy({
+      where: {
+        userId: user.id,
+      },
+    });
+    await EstatesDB.destroy({
+      where: {
+        userId: user.id,
+      },
+    });
+    await DebtsDB.destroy({
+      where: {
+        userId: user.id,
+      },
+    });
+    await InsuranceDB.destroy({
+      where: {
+        userId: user.id,
+      },
+    });
+    await MedicalEmergencyeDB.destroy({
       where: {
         userId: user.id,
       },
