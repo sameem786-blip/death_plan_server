@@ -13,6 +13,9 @@ const SubscriptionsRoute = require("./routes/subscriptions");
 const DebtsRoute = require("./routes/debts");
 const InsurancesRoute = require("./routes/insurances");
 const MedicalEmergenciesRoute = require("./routes/medicalemergencies");
+const AssetsAndAccountsRoute = require("./routes/assetsandaccounts");
+const ObituaryRoutes = require("./routes/obituary");
+const KeyContactsRoutes = require("./routes/keycontacts");
 
 app.use(cors());
 app.use(bodyParser.json());
@@ -27,6 +30,9 @@ app.use("/api/beneficiaries", BeneficiariesRoute);
 app.use("/api/subscriptions", SubscriptionsRoute);
 app.use("/api/insurances", InsurancesRoute);
 app.use("/api/medical-emergency", MedicalEmergenciesRoute);
+app.use("/api/assets-and-accounts", AssetsAndAccountsRoute);
+app.use("/api/obituary", ObituaryRoutes);
+app.use("/api/keycontacts", KeyContactsRoutes);
 
 app.get("/", (req, res) => res.send("Death Plan APIs is running!"));
 

@@ -7,6 +7,9 @@ module.exports = (sequelize, DataTypes) => {
       Users.hasMany(models.UserInsurances, { foreignKey: "userId" });
       Users.hasMany(models.UserDebts, { foreignKey: "userId" });
       Users.hasMany(models.UserMedicalEmergencies, { foreignKey: "userId" });
+      Users.hasMany(models.UserAssetsAndAccounts, { foreignKey: "userId" });
+      Users.hasMany(models.UserObituaries, { foreignKey: "userId" });
+      Users.hasMany(models.UserKeyContacts, { foreignKey: "userId" });
 
       Users.hasMany(models.Beneficiaries, {
         foreignKey: "userId",

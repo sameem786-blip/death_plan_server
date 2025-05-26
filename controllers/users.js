@@ -13,6 +13,9 @@ const EstatesDB = dataBase.UserEstates;
 const DebtsDB = dataBase.UserDebts;
 const InsuranceDB = dataBase.UserInsurances;
 const MedicalEmergencyeDB = dataBase.UserMedicalEmergencies;
+const AssetsAndAccountsDB = dataBase.UserAssetsAndAccounts;
+const ObituaryDB = dataBase.UserObituaries;
+const KeyContactsDB = dataBase.UserKeyContacts;
 
 exports.SignUp = async (req, res) => {
   try {
@@ -87,6 +90,15 @@ exports.signIn = async (req, res) => {
           model: MedicalEmergencyeDB,
         },
         {
+          model: AssetsAndAccountsDB,
+        },
+        {
+          model: ObituaryDB,
+        },
+        {
+          model: KeyContactsDB,
+        },
+        {
           model: SubscriptionsDB,
           include: [
             {
@@ -148,6 +160,15 @@ exports.getUserById = async (req, res) => {
         },
         {
           model: MedicalEmergencyeDB,
+        },
+        {
+          model: AssetsAndAccountsDB,
+        },
+        {
+          model: ObituaryDB,
+        },
+        {
+          model: KeyContactsDB,
         },
         {
           model: SubscriptionsDB,
@@ -229,6 +250,11 @@ exports.deleteWill = async (req, res) => {
         userId: user.id,
       },
     });
+    await ObituaryDB.destroy({
+      where: {
+        userId: user.id,
+      },
+    });
     await EstatesDB.destroy({
       where: {
         userId: user.id,
@@ -239,12 +265,17 @@ exports.deleteWill = async (req, res) => {
         userId: user.id,
       },
     });
+    await AssetsAndAccountsDB.destroy({
+      where: {
+        userId: user.id,
+      },
+    });
     await InsuranceDB.destroy({
       where: {
         userId: user.id,
       },
     });
-    await MedicalEmergencyeDB.destroy({
+    await KeyContactsDB.destroy({
       where: {
         userId: user.id,
       },
