@@ -9,67 +9,52 @@ const UserDB = dataBase.Users;
 const NotificationDB = dataBase.Notifications;
 const EstatesDB = dataBase.UserEstates;
 
+// POST /estates/save/step
 exports.saveLandRealEstate = async (req, res) => {
   try {
     const userId = req.user.id;
     const data = req.body;
-
-    await EstatesDB.destroy({
-      where: { userId },
-    });
 
     const encrypt = (text) =>
       text
         ? CryptoJS.AES.encrypt(text, process.env.CRYPTO_SECRET).toString()
         : "";
 
-    const estate = await EstatesDB.create({
-      userId,
+    const estates = await EstatesDB.findOne({ where: { userId } });
 
-      landRealEstate_text: encrypt(data["Land & Real Estate"]?.value),
-      landRealEstate_uploadType: data["Land & Real Estate"]?.uploadType || "",
+    const updates = {};
+    const [stepName] = Object.keys(data);
+    const { value, uploadType } = data[stepName];
 
-      vehicles_text: encrypt(data["Vehicles"]?.value),
-      vehicles_uploadType: data["Vehicles"]?.uploadType || "",
+    const stepKeyMap = {
+      "Land & Real Estate": "landRealEstate",
+      Vehicles: "vehicles",
+      "Jewelry, Family Heirlooms, Artwork, Collectibles": "collectibles",
+      "Checking, Savings, & Retirement Accounts": "accounts",
+      "Insurance Policies": "policies",
+      "Business Interests": "interests",
+      "Stocks & Bonds": "stockBonds",
+      "Debts & Obligations": "obligations",
+      "People & Pets I Care For": "peoplePets",
+    };
 
-      collectibles_text: encrypt(
-        data["Jewelry, Family Heirlooms, Artwork, Collectibles"]?.value
-      ),
-      collectibles_uploadType:
-        data["Jewelry, Family Heirlooms, Artwork, Collectibles"]?.uploadType ||
-        "",
+    const key = stepKeyMap[stepName];
+    updates[`${key}_text`] = encrypt(value);
+    updates[`${key}_uploadType`] = uploadType;
 
-      accounts_text: encrypt(
-        data["Checking, Savings, & Retirement Accounts"]?.value
-      ),
-      accounts_uploadType:
-        data["Checking, Savings, & Retirement Accounts"]?.uploadType || "",
-
-      policies_text: encrypt(data["Insurance Policies"]?.value),
-      policies_uploadType: data["Insurance Policies"]?.uploadType || "",
-
-      interests_text: encrypt(data["Business Interests"]?.value),
-      interests_uploadType: data["Business Interests"]?.uploadType || "",
-
-      stockBonds_text: encrypt(data["Stocks & Bonds"]?.value),
-      stockBonds_uploadType: data["Stocks & Bonds"]?.uploadType || "",
-
-      obligations_text: encrypt(data["Debts & Obligations"]?.value),
-      obligations_uploadType: data["Debts & Obligations"]?.uploadType || "",
-
-      peoplePets_text: encrypt(data["People & Pets I Care For"]?.value),
-      peoplePets_uploadType: data["People & Pets I Care For"]?.uploadType || "",
-    });
-
-    await createNotification(
-      userId,
-      "Real Estate Saved.",
-      "Your real estate data has been saved."
-    );
+    let estate;
+    if (estates) {
+      estate = await estates.update(updates);
+    } else {
+      estate = await EstatesDB.create({
+        userId,
+        ...updates,
+      });
+    }
 
     return res.status(200).json({ success: true, estates: estate });
   } catch (error) {
-    console.error("Error saving land real estate:", error);
+    console.error("Error saving estate step:", error);
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };

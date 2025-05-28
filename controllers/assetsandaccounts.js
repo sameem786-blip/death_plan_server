@@ -12,62 +12,53 @@ exports.saveAssetsAndAccounts = async (req, res) => {
     const userId = req.user.id;
     const data = req.body;
 
-    await AssetsAndAccountsDB.destroy({
-      where: { userId },
-    });
-
     const encrypt = (text) =>
       text
         ? CryptoJS.AES.encrypt(text, process.env.CRYPTO_SECRET).toString()
         : "";
 
-    const assetsandaccounts = await AssetsAndAccountsDB.create({
-      userId,
+    const stepMap = {
+      "My Death Plan™ Storage": "myDeathPlan",
+      "Online Banking": "onlineBanking",
+      "Social Media Accounts": "socialMediaAccounts",
+      "NFT & Cryptocurrency": "nftAndCryptoCurrency",
+      "Airline & Hotel Rewards Programs": "airlineAndHotelRewardsProgram",
+      "Blogs & Video Channels": "blogsAndVideoChannel",
+      "Domain Names": "domainNames",
+      "Subscription Services (books, music, etc.)": "subscriptionServices",
+      "Electronic Storage": "electronicStorage",
+    };
 
-      myDeathPlan_text: encrypt(data["My Death Plan™ Storage"]?.value),
-      myDeathPlan_uploadType: data["My Death Plan™ Storage"]?.uploadType || "",
+    const [key] = Object.keys(data);
+    const field = stepMap[key];
+    const value = data[key]?.value || "";
+    const uploadType = data[key]?.uploadType || "";
 
-      onlineBanking_text: encrypt(data["Online Banking"]?.value),
-      onlineBanking_uploadType: data["Online Banking"]?.uploadType || "",
+    let record = await AssetsAndAccountsDB.findOne({ where: { userId } });
 
-      socialMediaAccounts_text: encrypt(data["Social Media Accounts"]?.value),
-      socialMediaAccounts_uploadType:
-        data["Social Media Accounts"]?.uploadType || "",
+    const updateData = {
+      [`${field}_text`]: encrypt(value),
+      [`${field}_uploadType`]: uploadType,
+    };
 
-      nftAndCryptoCurrency_text: encrypt(data["NFT & Cryptocurrency"]?.value),
-      nftAndCryptoCurrency_uploadType:
-        data["NFT & Cryptocurrency"]?.uploadType || "",
-      airlineAndHotelRewardsProgram_text: encrypt(
-        data["Airline & Hotel Rewards Programs"]?.value
-      ),
-      airlineAndHotelRewardsProgram_uploadType:
-        data["Airline & Hotel Rewards Programs"]?.uploadType || "",
-      blogsAndVideoChannel_text: encrypt(data["Blogs & Video Channels"]?.value),
-      blogsAndVideoChannel_uploadType:
-        data["Blogs & Video Channels"]?.uploadType || "",
-      domainNames_text: encrypt(data["Domain Names"]?.value),
-      domainNames_uploadType: data["Domain Names"]?.uploadType || "",
-      subscriptionServices_text: encrypt(
-        data["Subscription Services (books, music, etc.)"]?.value
-      ),
-      subscriptionServices_uploadType:
-        data["Subscription Services (books, music, etc.)"]?.uploadType || "",
-      electronicStorage_text: encrypt(data["Electronic Storage"]?.value),
-      electronicStorage_uploadType:
-        data["Electronic Storage"]?.uploadType || "",
-    });
+    if (record) {
+      await record.update(updateData);
+    } else {
+      record = await AssetsAndAccountsDB.create({
+        userId,
+        ...updateData,
+      });
+    }
 
     await createNotification(
       userId,
-      "Medical Emergencies Saved.",
-      "Your Medical Emergencies data has been saved."
+      `${key} Saved`,
+      `Your ${key} record has been updated.`
     );
 
-    return res
-      .status(200)
-      .json({ success: true, assetsandaccounts: assetsandaccounts });
+    return res.status(200).json({ success: true, assetsandaccounts: record });
   } catch (error) {
-    console.error("Error saving Medical Emergencies:", error);
+    console.error("Error saving Assets & Accounts step:", error);
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };

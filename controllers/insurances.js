@@ -15,53 +15,52 @@ exports.saveInsurances = async (req, res) => {
     const userId = req.user.id;
     const data = req.body;
 
-    await InsuranceDB.destroy({
-      where: { userId },
-    });
-
     const encrypt = (text) =>
       text
         ? CryptoJS.AES.encrypt(text, process.env.CRYPTO_SECRET).toString()
         : "";
 
-    const insurance = await InsuranceDB.create({
-      userId,
+    const stepMap = {
+      Life: "life",
+      Liability: "liability",
+      "Long-Term Care(LTC)": "ltc",
+      "Long-Term Disability(LTD)": "ltd",
+      "Critical Illness": "criticalIllness",
+      Credit: "credit",
+      Pet: "pet",
+      "Guaranteed Asset Protection(GAP)": "gap",
+    };
 
-      life_text: encrypt(data["Life"]?.value),
-      life_uploadType: data["Life"]?.uploadType || "",
+    const [key] = Object.keys(data);
+    const field = stepMap[key];
+    const value = data[key]?.value || "";
+    const uploadType = data[key]?.uploadType || "";
 
-      liability_text: encrypt(data["Liability"]?.value),
-      liability_uploadType: data["Liability"]?.uploadType || "",
+    let insurance = await InsuranceDB.findOne({ where: { userId } });
 
-      ltc_text: encrypt(data["Long-Term Care(LTC)"]?.value),
-      ltc_uploadType: data["Long-Term Care(LTC)"]?.uploadType || "",
+    const updateData = {
+      [`${field}_text`]: encrypt(value),
+      [`${field}_uploadType`]: uploadType,
+    };
 
-      ltd_text: encrypt(data["Long-Term Disability(LTD)"]?.value),
-      ltd_uploadType: data["Long-Term Disability(LTD)"]?.uploadType || "",
-
-      criticalIllness_text: encrypt(data["Critical Illness"]?.value),
-      criticalIllness_uploadType: data["Critical Illness"]?.uploadType || "",
-
-      credit_text: encrypt(data["Credit"]?.value),
-      credit_uploadType: data["Credit"]?.uploadType || "",
-
-      gap_text: encrypt(data["Guaranteed Asset Protection(GAP)"]?.value),
-      gap_uploadType:
-        data["Guaranteed Asset Protection(GAP)"]?.uploadType || "",
-
-      pet_text: encrypt(data["Pet"]?.value),
-      pet_uploadType: data["Pet"]?.uploadType || "",
-    });
+    if (insurance) {
+      await insurance.update(updateData);
+    } else {
+      insurance = await InsuranceDB.create({
+        userId,
+        ...updateData,
+      });
+    }
 
     await createNotification(
       userId,
-      "Insurances Saved.",
-      "Your real insurance data has been saved."
+      `${key} Insurance Saved`,
+      `Your ${key} insurance entry has been updated.`
     );
 
     return res.status(200).json({ success: true, insurances: insurance });
   } catch (error) {
-    console.error("Error saving land real estate:", error);
+    console.error("Error saving insurance step:", error);
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };

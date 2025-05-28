@@ -12,39 +12,41 @@ exports.saveKeyContacts = async (req, res) => {
     const userId = req.user.id;
     const data = req.body;
 
-    await KeyContactsDB.destroy({
-      where: { userId },
-    });
-
     const encrypt = (text) =>
       text
         ? CryptoJS.AES.encrypt(text, process.env.CRYPTO_SECRET).toString()
         : "";
 
-    const keycontacts = await KeyContactsDB.create({
-      userId,
+    const keyContacts = await KeyContactsDB.findOne({ where: { userId } });
 
-      legalAdvisor_text: encrypt(data["LEGAL ADVISOR"]?.value),
-      legalAdvisor_uploadType: data["LEGAL ADVISOR"]?.uploadType || "",
+    const updates = {};
+    const [stepName] = Object.keys(data);
+    const { value, uploadType } = data[stepName];
 
-      church_text: encrypt(data["CHURCH"]?.value),
-      church_uploadType: data["CHURCH"]?.uploadType || "",
+    const keyMap = {
+      "LEGAL ADVISOR": "legalAdvisor",
+      CHURCH: "church",
+      "FINANCIAL ADVISOR": "financialAdvisor",
+      CEMETARY: "cemetary",
+      "FUNERAL HOME": "funeralHome",
+      "INSURANCE AGENT": "insuranceAgent",
+      PASTOR: "pastor",
+      "BEAUTICIAN / BARBER": "beauticianBarber",
+    };
 
-      financialAdvisor_text: encrypt(data["FINANCIAL ADVISOR"]?.value),
-      financialAdvisor_uploadType: data["FINANCIAL ADVISOR"]?.uploadType || "",
+    const key = keyMap[stepName];
+    updates[`${key}_text`] = encrypt(value);
+    updates[`${key}_uploadType`] = uploadType;
 
-      cemetary_text: encrypt(data["CEMETARY"]?.value),
-      cemetary_uploadType: data["CEMETARY"]?.uploadType || "",
-      funeralHome_text: encrypt(data["FUNERAL HOME"]?.value),
-      funeralHome_uploadType: data["FUNERAL HOME"]?.uploadType || "",
-      insuranceAgent_text: encrypt(data["INSURANCE AGENT"]?.value),
-      insuranceAgent_uploadType: data["INSURANCE AGENT"]?.uploadType || "",
-      pastor_text: encrypt(data["PASTOR"]?.value),
-      pastor_uploadType: data["PASTOR"]?.uploadType || "",
-      beauticianBarber_text: encrypt(data["BEAUTICIAN / BARBER"]?.value),
-      beauticianBarber_uploadType:
-        data["BEAUTICIAN / BARBER"]?.uploadType || "",
-    });
+    let updated;
+    if (keyContacts) {
+      updated = await keyContacts.update(updates);
+    } else {
+      updated = await KeyContactsDB.create({
+        userId,
+        ...updates,
+      });
+    }
 
     await createNotification(
       userId,
@@ -52,9 +54,9 @@ exports.saveKeyContacts = async (req, res) => {
       "Your Key Contacts data has been saved."
     );
 
-    return res.status(200).json({ success: true, keycontacts: keycontacts });
+    return res.status(200).json({ success: true, keycontacts: updated });
   } catch (error) {
-    console.error("Error saving Medical Emergencies:", error);
+    console.error("Error saving key contacts:", error);
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };
