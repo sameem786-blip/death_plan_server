@@ -197,7 +197,8 @@ exports.updateUser = async (req, res) => {
     console.log("User", req.body);
 
     const userToUpdate = {
-      fullName: req.body.fullName,
+      firstName: req.body.firstName,
+      lastName: req.body.lastName,
       email: req.body.email,
       contact: req.body.contact,
       gender: req.body.gender,

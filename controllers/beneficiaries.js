@@ -13,6 +13,73 @@ const userdebts = require("../models/userdebts");
 exports.createBeneficiaries = async (req, res) => {
   try {
     const userId = req.user.id;
+    const user = await UserDB.findOne({ where: { id: userId } });
+
+    // Remove existing beneficiaries
+    await BeneficiaryDB.destroy({ where: { userId } });
+
+    const encrypt = (text) =>
+      text
+        ? CryptoJS.AES.encrypt(text, process.env.CRYPTO_SECRET).toString()
+        : "";
+
+    const beneficiariesData = req.body.beneficiaries.map((b) => ({
+      userId,
+      fullName: encrypt(b.fullName),
+      email: encrypt(b.email),
+      contact: encrypt(b.contact),
+      relationShip: encrypt(b.relationship),
+      isHeir: !!b.isHeir,
+    }));
+
+    await BeneficiaryDB.bulkCreate(beneficiariesData);
+
+    user.isWillStarted = true;
+    await user.save();
+
+    return res.status(200).json("Beneficiaries created successfully.");
+  } catch (error) {
+    console.error("Error creating beneficiaries:", error);
+    return res.status(500).json("Internal Server Error");
+  }
+};
+exports.createBeneficiaries = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const user = await UserDB.findOne({ where: { id: userId } });
+
+    // Remove existing beneficiaries
+    await BeneficiaryDB.destroy({ where: { userId } });
+
+    const encrypt = (text) =>
+      text
+        ? CryptoJS.AES.encrypt(text, process.env.CRYPTO_SECRET).toString()
+        : "";
+
+    const beneficiariesData = req.body.beneficiaries.map((b) => ({
+      userId,
+      fullName: encrypt(b.fullName),
+      email: encrypt(b.email),
+      contact: encrypt(b.contact),
+      relationShip: encrypt(b.relationship),
+      isHeir: !!b.isHeir,
+    }));
+
+    await BeneficiaryDB.bulkCreate(beneficiariesData);
+
+    user.isWillStarted = true;
+    await user.save();
+
+    return res.status(200).json("Beneficiaries created successfully.");
+  } catch (error) {
+    console.error("Error creating beneficiaries:", error);
+    return res.status(500).json("Internal Server Error");
+  }
+};
+
+exports.createBeneficiariesSetup = async (req, res) => {
+  try {
+    const userId = req.user.id;
     console.log("body", req.body);
     const user = await UserDB.findOne({
       where: { id: userId },

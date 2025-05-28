@@ -18,16 +18,19 @@ exports.subscribeToFreePackage = async (req, res) => {
       },
     });
 
-    const package = PackageDB.findOne({
-      where: {
-        packageCost: "0",
-      },
-    });
+    // const package = PackageDB.findOne({
+    //   where: {
+    //     packageLabel: "Free Plan",
+    //   },
+    // });
 
     await SubscriptionDB.create({
       userId: user.id,
-      packageId: package.id,
+      packageId: 1,
     });
+
+    user.subscribed = true;
+    await user.save();
 
     return res.status(200).json("Susbcribed to free plan");
   } catch (error) {
