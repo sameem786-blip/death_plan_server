@@ -243,6 +243,9 @@ exports.deleteWill = async (req, res) => {
 
     user.isWillComplete = false;
     user.isWillStarted = false;
+    user.financialEmergenciesOpened = false;
+    user.medicalEmergenciesOpened = false;
+    user.nextStepsOpened = false;
 
     await user.save();
 
@@ -312,6 +315,35 @@ exports.markWillComplete = async (req, res) => {
     return res.status(200).json("User's will is now complete.");
   } catch (err) {
     console.log("Error during signin", error);
+    return res.status(500).json("Internal Server Error");
+  }
+};
+
+exports.markOpened = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const cat = req.body.category;
+
+    if (cat == "finance") {
+      await UserDB.update(
+        { financialEmergenciesOpened: true },
+        { where: { id: req.user.id } }
+      );
+    } else if (cat === "medical") {
+      await UserDB.update(
+        { medicalEmergenciesOpened: true },
+        { where: { id: req.user.id } }
+      );
+    } else {
+      await UserDB.update(
+        { nextStepsOpened: true },
+        { where: { id: req.user.id } }
+      );
+    }
+
+    return res.status(200).json("marked opened");
+  } catch (err) {
+    console.log(err);
     return res.status(500).json("Internal Server Error");
   }
 };

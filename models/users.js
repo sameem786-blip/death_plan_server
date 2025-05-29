@@ -39,6 +39,9 @@ module.exports = (sequelize, DataTypes) => {
       bio: DataTypes.STRING,
       subscribed: DataTypes.BOOLEAN,
       stripeCustomerId: DataTypes.STRING,
+      medicalEmergenciesOpened: DataTypes.BOOLEAN,
+      financialEmergenciesOpened: DataTypes.BOOLEAN,
+      nextStepsOpened: DataTypes.BOOLEAN,
     },
     {
       sequelize,
