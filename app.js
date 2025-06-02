@@ -17,6 +17,18 @@ const AssetsAndAccountsRoute = require("./routes/assetsandaccounts");
 const ObituaryRoutes = require("./routes/obituary");
 const KeyContactsRoutes = require("./routes/keycontacts");
 
+// const allowedOrigins = [
+//   "http://localhost:5173", // local dev on PC
+//   "http://192.168.18.9:5173", // replace with your PC's IP, e.g., "http://192.168.1.100:3000"
+// ];
+
+// app.use(
+//   cors({
+//     origin: allowedOrigins,
+//     credentials: true,
+//   })
+// );
+
 app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
