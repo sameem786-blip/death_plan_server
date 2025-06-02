@@ -16,6 +16,7 @@ const MedicalEmergencyeDB = dataBase.UserMedicalEmergencies;
 const AssetsAndAccountsDB = dataBase.UserAssetsAndAccounts;
 const ObituaryDB = dataBase.UserObituaries;
 const KeyContactsDB = dataBase.UserKeyContacts;
+const TransactionsDB = dataBase.TransactionHistories;
 
 exports.SignUp = async (req, res) => {
   try {
@@ -169,6 +170,12 @@ exports.getUserById = async (req, res) => {
         },
         {
           model: KeyContactsDB,
+        },
+        {
+          model: KeyContactsDB,
+        },
+        {
+          model: TransactionsDB,
         },
         {
           model: SubscriptionsDB,
@@ -344,6 +351,56 @@ exports.markOpened = async (req, res) => {
     return res.status(200).json("marked opened");
   } catch (err) {
     console.log(err);
+    return res.status(500).json("Internal Server Error");
+  }
+};
+
+exports.fetchUsersForAdmin = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const admin = await UserDB.findOne({
+      where: {
+        id: userId,
+        role: "admin",
+      },
+    });
+
+    console.log("User", admin);
+    if (!admin) {
+      return res.status(403).json("Unauthorized access.");
+    }
+
+    const allUsers = await UserDB.findAll({
+      where: {
+        role: "user",
+      },
+      attributes: [
+        "role",
+        "id",
+        "firstName",
+        "lastName",
+        "createdAt",
+        "contact",
+        "email",
+        "avatar",
+        "isWillStarted",
+      ],
+      include: [
+        {
+          model: SubscriptionsDB,
+          include: [
+            {
+              model: PackagesDB,
+            },
+          ],
+        },
+      ],
+    });
+
+    return res.status(200).json({ allUsers });
+  } catch (error) {
+    console.log(error);
     return res.status(500).json("Internal Server Error");
   }
 };

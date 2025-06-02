@@ -11,5 +11,6 @@ router.get("/getUserById/:id", checkAuth, userController.getUserById);
 router.put("/markStarted", checkAuth, userController.markWillStarted);
 router.put("/markOpened", checkAuth, userController.markOpened);
 router.delete("/deleteWill", checkAuth, userController.deleteWill);
+router.get("/fetchAllUsers", checkAuth, userController.fetchUsersForAdmin);
 
 module.exports = router;
