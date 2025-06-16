@@ -110,6 +110,12 @@ exports.createBeneficiariesSetup = async (req, res) => {
     await BeneficiaryDB.bulkCreate([beneficiary1, beneficiary2]);
 
     user.isWillStarted = true;
+
+    const encryptedPassword = await bcrypt.hash(
+      req.body.accessPassword,
+      parseInt(process.env.ENCRYPTION_SALT)
+    );
+    user.accessPassword = encryptedPassword;
     await user.save();
 
     return res.status(200).json("Beneficiaries created successfully.");

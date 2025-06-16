@@ -12,5 +12,10 @@ router.put("/markStarted", checkAuth, userController.markWillStarted);
 router.put("/markOpened", checkAuth, userController.markOpened);
 router.delete("/deleteWill", checkAuth, userController.deleteWill);
 router.get("/fetchAllUsers", checkAuth, userController.fetchUsersForAdmin);
+router.post(
+  "/addAdditionalUpload",
+  checkAuth,
+  userController.addAdditionalUpload
+);
 
 module.exports = router;

@@ -21,7 +21,7 @@ app.use("/api/notifications", require("./routes/notifications"));
 app.use("/api/estates", require("./routes/estates"));
 app.use("/api/aws", require("./routes/fileUpload"));
 app.use("/api/beneficiaries", require("./routes/beneficiaries"));
-app.use("/api/subscriptions", require("./routes/subscriptions")); // stripewebhook already handled
+app.use("/api/subscriptions", require("./routes/subscriptions"));
 app.use("/api/debts", require("./routes/debts"));
 app.use("/api/insurances", require("./routes/insurances"));
 app.use("/api/medical-emergency", require("./routes/medicalemergencies"));

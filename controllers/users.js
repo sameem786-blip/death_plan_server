@@ -3,6 +3,7 @@ const jwt = require("jsonwebtoken");
 
 const dataBase = require("../models");
 const { createNotification } = require("./notifications");
+const CryptoJS = require("crypto-js");
 
 const UserDB = dataBase.Users;
 const BeneficiaryDB = dataBase.Beneficiaries;
@@ -17,6 +18,10 @@ const AssetsAndAccountsDB = dataBase.UserAssetsAndAccounts;
 const ObituaryDB = dataBase.UserObituaries;
 const KeyContactsDB = dataBase.UserKeyContacts;
 const TransactionsDB = dataBase.TransactionHistories;
+const UploadsDB = dataBase.AdditionalUploads;
+
+const encrypt = (text) =>
+  text ? CryptoJS.AES.encrypt(text, process.env.CRYPTO_SECRET).toString() : "";
 
 exports.SignUp = async (req, res) => {
   try {
@@ -100,6 +105,9 @@ exports.signIn = async (req, res) => {
           model: KeyContactsDB,
         },
         {
+          model: UploadsDB,
+        },
+        {
           model: SubscriptionsDB,
           include: [
             {
@@ -160,6 +168,9 @@ exports.getUserById = async (req, res) => {
           model: InsuranceDB,
         },
         {
+          model: UploadsDB,
+        },
+        {
           model: MedicalEmergencyeDB,
         },
         {
@@ -208,7 +219,9 @@ exports.updateUser = async (req, res) => {
       lastName: req.body.lastName,
       email: req.body.email,
       contact: req.body.contact,
-      gender: req.body.gender,
+      referralSource: req.body.referralSource,
+      referralSourceSpecification: req.body.referralSourceSpecification,
+      // gender: req.body.gender,
     };
 
     if (req.body.newPassword && req.body.currentPassword) {
@@ -287,6 +300,11 @@ exports.deleteWill = async (req, res) => {
       },
     });
     await KeyContactsDB.destroy({
+      where: {
+        userId: user.id,
+      },
+    });
+    await UploadsDB.destroy({
       where: {
         userId: user.id,
       },
@@ -402,5 +420,25 @@ exports.fetchUsersForAdmin = async (req, res) => {
   } catch (error) {
     console.log(error);
     return res.status(500).json("Internal Server Error");
+  }
+};
+
+exports.addAdditionalUpload = async (req, res) => {
+  try {
+    const urlArray = req.body.uploadedFiles;
+
+    console.log("Re,", req.body);
+
+    for (const url of urlArray) {
+      await UploadsDB.create({
+        userId: req.user.id,
+        uploadUrl: url,
+      });
+    }
+
+    res.status(200).json("file saved successfully");
+  } catch (err) {
+    console.log(err);
+    res.status(500).json("Internal Server Error.");
   }
 };

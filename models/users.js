@@ -10,6 +10,7 @@ module.exports = (sequelize, DataTypes) => {
       Users.hasMany(models.UserAssetsAndAccounts, { foreignKey: "userId" });
       Users.hasMany(models.UserObituaries, { foreignKey: "userId" });
       Users.hasMany(models.UserKeyContacts, { foreignKey: "userId" });
+      Users.hasMany(models.AdditionalUploads, { foreignKey: "userId" });
 
       Users.hasMany(models.Beneficiaries, {
         foreignKey: "userId",
@@ -30,6 +31,7 @@ module.exports = (sequelize, DataTypes) => {
       fullName: DataTypes.STRING,
       email: DataTypes.STRING,
       encryptedPassword: DataTypes.STRING,
+      accessPassword: DataTypes.STRING,
       avatar: DataTypes.STRING,
       role: DataTypes.STRING,
       isAlive: DataTypes.BOOLEAN,
@@ -42,6 +44,8 @@ module.exports = (sequelize, DataTypes) => {
       bio: DataTypes.STRING,
       subscribed: DataTypes.BOOLEAN,
       stripeCustomerId: DataTypes.STRING,
+      referralSource: DataTypes.STRING,
+      referralSourceSpecification: DataTypes.STRING,
       medicalEmergenciesOpened: DataTypes.BOOLEAN,
       financialEmergenciesOpened: DataTypes.BOOLEAN,
       nextStepsOpened: DataTypes.BOOLEAN,
