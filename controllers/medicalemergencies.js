@@ -5,59 +5,44 @@ const CryptoJS = require("crypto-js");
 const dataBase = require("../models");
 const { createNotification } = require("./notifications");
 
-const MedicalEmergenciesDB = dataBase.UserMedicalEmergencies;
+const FinancialEmergenciesDB = dataBase.UserFinancialEmergencies;
 
-exports.saveMedicalEmergency = async (req, res) => {
+exports.saveFinancialEmergencyPoa = async (req, res) => {
   try {
     const userId = req.user.id;
-    const data = req.body;
-
-    await MedicalEmergenciesDB.destroy({
-      where: { userId },
-    });
+    const { value, uploadType } = req.body;
 
     const encrypt = (text) =>
       text
         ? CryptoJS.AES.encrypt(text, process.env.CRYPTO_SECRET).toString()
         : "";
 
-    const medicalEmergency = await MedicalEmergenciesDB.create({
-      userId,
+    const encryptedUrl = encrypt(value || "");
 
-      advancedHealthcareDirective_text: encrypt(
-        data["Advanced Healthcare Directive (Living Will)"]?.value
-      ),
-      advancedHealthcareDirective_uploadType:
-        data["Advanced Healthcare Directive (Living Will)"]?.uploadType || "",
+    let record = await FinancialEmergenciesDB.findOne({ where: { userId } });
 
-      healthcarePowerOfAttorney_text: encrypt(
-        data["Healthcare Power of Attorney"]?.value
-      ),
-      healthcarePowerOfAttorney_uploadType:
-        data["Healthcare Power of Attorney"]?.uploadType || "",
-
-      hIPPAAuthorization_text: encrypt(data["HIPPA Authorization"]?.value),
-      hIPPAAuthorization_uploadType:
-        data["HIPPA Authorization"]?.uploadType || "",
-
-      doNotResuscitateOrder_text: encrypt(
-        data["Do Not Resuscitate (DNR) Order"]?.value
-      ),
-      doNotResuscitateOrder_uploadType:
-        data["Do Not Resuscitate (DNR) Order"]?.uploadType || "",
-    });
+    if (record) {
+      await record.update({
+        poa_text: "",
+        poa_url: encryptedUrl || "text",
+      });
+    } else {
+      record = await FinancialEmergenciesDB.create({
+        userId,
+        poa_text: "",
+        poa_url: encryptedUrl || "text",
+      });
+    }
 
     await createNotification(
       userId,
-      "Medical Emergencies Saved.",
-      "Your Medical Emergencies data has been saved."
+      "Financial POA Saved.",
+      "Your Financial Power of Attorney has been saved."
     );
 
-    return res
-      .status(200)
-      .json({ success: true, medicalEmergency: medicalEmergency });
+    return res.status(200).json({ success: true, financialEmergency: record });
   } catch (error) {
-    console.error("Error saving Medical Emergencies:", error);
+    console.error("Error saving Financial POA:", error);
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };

@@ -7,54 +7,45 @@ const { createNotification } = require("./notifications");
 
 const UserDB = dataBase.Users;
 const NotificationDB = dataBase.Notifications;
-const EstatesDB = dataBase.UserEstates;
+const EstatesDB = dataBase.UserRealEstates;
 
 // POST /estates/save/step
 exports.saveLandRealEstate = async (req, res) => {
   try {
     const userId = req.user.id;
-    const data = req.body;
+    const { properties } = req.body;
 
-    const encrypt = (text) =>
-      text
-        ? CryptoJS.AES.encrypt(text, process.env.CRYPTO_SECRET).toString()
+    const encrypt = (value) =>
+      value
+        ? CryptoJS.AES.encrypt(value, process.env.CRYPTO_SECRET).toString()
         : "";
 
-    const estates = await EstatesDB.findOne({ where: { userId } });
+    const subModuleTypePlain = "land_real_estate";
+    const encryptedData = encrypt(JSON.stringify(properties));
 
-    const updates = {};
-    const [stepName] = Object.keys(data);
-    const { value, uploadType } = data[stepName];
+    const existing = await EstatesDB.findOne({
+      where: { userId, subModuleType: subModuleTypePlain },
+    });
 
-    const stepKeyMap = {
-      "Land & Real Estate": "landRealEstate",
-      Vehicles: "vehicles",
-      "Jewelry, Family Heirlooms, Artwork, Collectibles": "collectibles",
-      "Checking, Savings, & Retirement Accounts": "accounts",
-      "Insurance Policies": "policies",
-      "Business Interests": "interests",
-      "Stocks & Bonds": "stockBonds",
-      "Debts & Obligations": "obligations",
-      "People & Pets I Care For": "peoplePets",
-    };
-
-    const key = stepKeyMap[stepName];
-    updates[`${key}_text`] = encrypt(value);
-    updates[`${key}_uploadType`] = uploadType;
-
-    let estate;
-    if (estates) {
-      estate = await estates.update(updates);
+    if (existing) {
+      await EstatesDB.update(
+        { data: encryptedData },
+        { where: { id: existing.id } }
+      );
     } else {
-      estate = await EstatesDB.create({
+      await EstatesDB.create({
         userId,
-        ...updates,
+        subModuleType: subModuleTypePlain,
+        data: encryptedData,
       });
     }
 
-    return res.status(200).json({ success: true, estates: estate });
+    return res.status(200).json({
+      success: true,
+      message: existing ? "Property data updated." : "Property data saved.",
+    });
   } catch (error) {
-    console.error("Error saving estate step:", error);
+    console.error("Error saving land real estate:", error);
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };
@@ -62,81 +53,296 @@ exports.saveLandRealEstate = async (req, res) => {
 exports.saveVehicleRealEstate = async (req, res) => {
   try {
     const userId = req.user.id;
+    const { vehicles } = req.body;
 
-    const results = [];
+    const encrypt = (value) =>
+      value
+        ? CryptoJS.AES.encrypt(value, process.env.CRYPTO_SECRET).toString()
+        : "";
 
-    for (const estate of req.body) {
-      console.log("Estate", estate);
-      if (estate.id) {
-        const existing = await VehicleRealEstateEstateDB.findOne({
-          where: { id: estate.id, userId },
-        });
+    const encryptedSubModuleType = "vehicles";
+    const encryptedData = encrypt(JSON.stringify(vehicles));
 
-        if (existing) {
-          await existing.update({
-            title: CryptoJS.AES.encrypt(
-              estate.title,
-              process.env.CRYPTO_SECRET
-            ).toString(),
-            description: CryptoJS.AES.encrypt(
-              estate.description,
-              process.env.CRYPTO_SECRET
-            ).toString(),
-            value: CryptoJS.AES.encrypt(
-              estate.value.value,
-              process.env.CRYPTO_SECRET
-            ).toString(),
-          });
-          results.push(existing);
-        } else {
-          // ID provided but no match — treat as new creation
-          const created = await VehicleRealEstateEstateDB.create({
-            userId,
-            title: CryptoJS.AES.encrypt(
-              estate.title,
-              process.env.CRYPTO_SECRET
-            ).toString(),
-            description: CryptoJS.AES.encrypt(
-              estate.description,
-              process.env.CRYPTO_SECRET
-            ).toString(),
-            value: CryptoJS.AES.encrypt(
-              estate.value.value,
-              process.env.CRYPTO_SECRET
-            ).toString(),
-          });
-          results.push(created);
-        }
-      } else {
-        // No ID — create new
-        const created = await VehicleRealEstateEstateDB.create({
-          userId,
-          title: CryptoJS.AES.encrypt(
-            estate.title,
-            process.env.CRYPTO_SECRET
-          ).toString(),
-          description: CryptoJS.AES.encrypt(
-            estate.description,
-            process.env.CRYPTO_SECRET
-          ).toString(),
-          value: CryptoJS.AES.encrypt(
-            estate.value.value,
-            process.env.CRYPTO_SECRET
-          ).toString(),
-        });
-        results.push(created);
-      }
+    const existing = await EstatesDB.findOne({
+      where: { userId, subModuleType: encryptedSubModuleType },
+    });
+
+    let result;
+
+    if (existing) {
+      result = await existing.update({ data: encryptedData });
+    } else {
+      result = await EstatesDB.create({
+        userId,
+        subModuleType: encryptedSubModuleType,
+        data: encryptedData,
+      });
     }
 
     await createNotification(
-      req.user.id,
+      userId,
       "Vehicle Estate Saved.",
-      "You vehicle estate data has been saved."
+      "Your vehicle estate data has been saved."
     );
 
-    return res.status(200).json({ success: true, estates: results });
+    return res.status(200).json({ success: true, estate: result });
   } catch (error) {
-    console.error("Error saving land real estate:", error);
+    console.error("Error saving vehicle real estate:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+exports.saveCollectablesEstate = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { collectables } = req.body;
+
+    const encrypt = (value) =>
+      value
+        ? CryptoJS.AES.encrypt(value, process.env.CRYPTO_SECRET).toString()
+        : "";
+
+    const encryptedSubModuleType = "collectables";
+    const encryptedData = encrypt(JSON.stringify(collectables));
+
+    const existing = await EstatesDB.findOne({
+      where: { userId, subModuleType: encryptedSubModuleType },
+    });
+
+    let result;
+
+    if (existing) {
+      result = await existing.update({ data: encryptedData });
+    } else {
+      result = await EstatesDB.create({
+        userId,
+        subModuleType: encryptedSubModuleType,
+        data: encryptedData,
+      });
+    }
+
+    await createNotification(
+      userId,
+      "Collectables Saved.",
+      "Your collectables data has been saved."
+    );
+
+    return res.status(200).json({ success: true, estate: result });
+  } catch (error) {
+    console.error("Error saving collectables:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+exports.saveFinancialAccounts = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { accounts } = req.body;
+
+    const encrypt = (value) =>
+      value
+        ? CryptoJS.AES.encrypt(value, process.env.CRYPTO_SECRET).toString()
+        : "";
+
+    const encryptedSubModuleType = "financial_accounts";
+    const encryptedData = encrypt(JSON.stringify(accounts));
+
+    const existing = await EstatesDB.findOne({
+      where: { userId, subModuleType: encryptedSubModuleType },
+    });
+
+    let result;
+
+    if (existing) {
+      result = await existing.update({ data: encryptedData });
+    } else {
+      result = await EstatesDB.create({
+        userId,
+        subModuleType: encryptedSubModuleType,
+        data: encryptedData,
+      });
+    }
+
+    await createNotification(
+      userId,
+      "Financial Accounts Saved.",
+      "Your financial accounts have been saved."
+    );
+
+    return res.status(200).json({ success: true, estate: result });
+  } catch (error) {
+    console.error("Error saving financial accounts:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+exports.saveBusinessInterests = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { businesses } = req.body;
+
+    const encrypt = (value) =>
+      value
+        ? CryptoJS.AES.encrypt(value, process.env.CRYPTO_SECRET).toString()
+        : "";
+
+    const encryptedSubModuleType = "business_interests";
+    const encryptedData = encrypt(JSON.stringify(businesses));
+
+    const existing = await EstatesDB.findOne({
+      where: { userId, subModuleType: encryptedSubModuleType },
+    });
+
+    let result;
+
+    if (existing) {
+      result = await existing.update({ data: encryptedData });
+    } else {
+      result = await EstatesDB.create({
+        userId,
+        subModuleType: encryptedSubModuleType,
+        data: encryptedData,
+      });
+    }
+
+    await createNotification(
+      userId,
+      "Business Interests Saved.",
+      "Your business interests have been saved."
+    );
+
+    return res.status(200).json({ success: true, estate: result });
+  } catch (error) {
+    console.error("Error saving business interests:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+exports.saveStocksAndBonds = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { stocks } = req.body;
+
+    const encrypt = (value) =>
+      value
+        ? CryptoJS.AES.encrypt(value, process.env.CRYPTO_SECRET).toString()
+        : "";
+
+    const encryptedSubModuleType = "stocks_bonds";
+    const encryptedData = encrypt(JSON.stringify(stocks));
+
+    const existing = await EstatesDB.findOne({
+      where: { userId, subModuleType: encryptedSubModuleType },
+    });
+
+    let result;
+
+    if (existing) {
+      result = await existing.update({ data: encryptedData });
+    } else {
+      result = await EstatesDB.create({
+        userId,
+        subModuleType: encryptedSubModuleType,
+        data: encryptedData,
+      });
+    }
+
+    await createNotification(
+      userId,
+      "Stocks & Bonds Saved.",
+      "Your stocks and bonds information has been saved."
+    );
+
+    return res.status(200).json({ success: true, estate: result });
+  } catch (error) {
+    console.error("Error saving stocks and bonds:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+exports.saveDebtsAndObligations = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { debts } = req.body;
+
+    if (!Array.isArray(debts)) {
+      return res.status(400).json({ message: "Invalid payload format." });
+    }
+
+    const encrypt = (value) =>
+      value
+        ? CryptoJS.AES.encrypt(value, process.env.CRYPTO_SECRET).toString()
+        : "";
+
+    const encryptedSubModuleType = "debts_obligations";
+    const encryptedData = encrypt(JSON.stringify(debts));
+
+    const existing = await EstatesDB.findOne({
+      where: { userId, subModuleType: encryptedSubModuleType },
+    });
+
+    let result;
+    if (existing) {
+      result = await existing.update({ data: encryptedData });
+    } else {
+      result = await EstatesDB.create({
+        userId,
+        subModuleType: encryptedSubModuleType,
+        data: encryptedData,
+      });
+    }
+
+    await createNotification(
+      userId,
+      "Debts & Obligations Saved.",
+      "Your debts and obligations information has been saved."
+    );
+
+    return res.status(200).json({ success: true, estate: result });
+  } catch (error) {
+    console.error("Error saving debts and obligations:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+exports.saveOther = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { accounts } = req.body;
+
+    const encrypt = (value) =>
+      value
+        ? CryptoJS.AES.encrypt(
+            JSON.stringify(value),
+            process.env.CRYPTO_SECRET
+          ).toString()
+        : "";
+
+    const encryptedSubModuleType = "other_estates";
+    const encryptedData = encrypt(accounts);
+
+    const existing = await EstatesDB.findOne({
+      where: { userId, subModuleType: encryptedSubModuleType },
+    });
+
+    let result;
+
+    if (existing) {
+      result = await existing.update({ data: encryptedData });
+    } else {
+      result = await EstatesDB.create({
+        userId,
+        subModuleType: encryptedSubModuleType,
+        data: encryptedData,
+      });
+    }
+
+    await createNotification(
+      userId,
+      "Other Digital Assets Saved",
+      "Your other digital asset information has been successfully saved."
+    );
+
+    return res.status(200).json({ success: true, assets: result });
+  } catch (error) {
+    console.error("Error saving other digital assets:", error);
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };

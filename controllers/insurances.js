@@ -7,60 +7,49 @@ const { createNotification } = require("./notifications");
 
 const UserDB = dataBase.Users;
 const NotificationDB = dataBase.Notifications;
-const EstatesDB = dataBase.UserEstates;
+const EstatesDB = dataBase.UserRealEstates;
 const InsuranceDB = dataBase.UserInsurances;
 
 exports.saveInsurances = async (req, res) => {
   try {
     const userId = req.user.id;
-    const data = req.body;
+    const { policies } = req.body;
+
+    if (!Array.isArray(policies) || policies.length === 0) {
+      return res
+        .status(400)
+        .json({ message: "No insurance policies provided" });
+    }
 
     const encrypt = (text) =>
       text
         ? CryptoJS.AES.encrypt(text, process.env.CRYPTO_SECRET).toString()
         : "";
 
-    const stepMap = {
-      Life: "life",
-      Liability: "liability",
-      "Long-Term Care(LTC)": "ltc",
-      "Long-Term Disability(LTD)": "ltd",
-      "Critical Illness": "criticalIllness",
-      Credit: "credit",
-      Pet: "pet",
-      "Guaranteed Asset Protection(GAP)": "gap",
-    };
+    // Delete existing policies for user (optional, or soft delete if needed)
+    await InsuranceDB.destroy({ where: { userId } });
 
-    const [key] = Object.keys(data);
-    const field = stepMap[key];
-    const value = data[key]?.value || "";
-    const uploadType = data[key]?.uploadType || "";
+    // Prepare encrypted entries
+    const encryptedPolicies = policies.map((policy) => ({
+      userId,
+      policyType: encrypt(policy.policyType),
+      insuranceCompany: encrypt(policy.insuranceCompany),
+      policyNumber: encrypt(policy.policyNumber),
+      beneficiary: encrypt(policy.beneficiary),
+    }));
 
-    let insurance = await InsuranceDB.findOne({ where: { userId } });
-
-    const updateData = {
-      [`${field}_text`]: encrypt(value),
-      [`${field}_uploadType`]: uploadType,
-    };
-
-    if (insurance) {
-      await insurance.update(updateData);
-    } else {
-      insurance = await InsuranceDB.create({
-        userId,
-        ...updateData,
-      });
-    }
+    // Bulk insert
+    await InsuranceDB.bulkCreate(encryptedPolicies);
 
     await createNotification(
       userId,
-      `${key} Insurance Saved`,
-      `Your ${key} insurance entry has been updated.`
+      "Insurance Policies Saved",
+      "Your insurance policy records have been updated."
     );
 
-    return res.status(200).json({ success: true, insurances: insurance });
+    return res.status(200).json({ success: true });
   } catch (error) {
-    console.error("Error saving insurance step:", error);
+    console.error("Error saving insurance policies:", error);
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };

@@ -7,7 +7,7 @@ const { createNotification } = require("./notifications");
 
 const UserDB = dataBase.Users;
 const NotificationDB = dataBase.Notifications;
-const EstatesDB = dataBase.UserEstates;
+const EstatesDB = dataBase.UserRealEstates;
 const DebtsDB = dataBase.UserDebts;
 
 exports.saveDebts = async (req, res) => {
@@ -31,6 +31,7 @@ exports.saveDebts = async (req, res) => {
       const newDebt = await DebtsDB.create({
         userId: userId,
         creditorPhone: encrypt(debt.creditorPhone),
+        creditorName: encrypt(debt.creditorName),
         creditorAddress: encrypt(debt.creditorAddress),
         creditorAccountNumber: encrypt(debt.accountNumbe),
         paymentAmount: encrypt(debt.paymentAmount),

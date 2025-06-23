@@ -10,10 +10,11 @@ const BeneficiaryDB = dataBase.Beneficiaries;
 const SubscriptionsDB = dataBase.Subscriptions;
 const PackagesDB = dataBase.Packages;
 const NotificationDB = dataBase.Notifications;
-const EstatesDB = dataBase.UserEstates;
+const EstatesDB = dataBase.UserRealEstates;
 const DebtsDB = dataBase.UserDebts;
 const InsuranceDB = dataBase.UserInsurances;
 const MedicalEmergencyeDB = dataBase.UserMedicalEmergencies;
+const FinancialEmergencyDB = dataBase.UserFinancialEmergencies;
 const AssetsAndAccountsDB = dataBase.UserAssetsAndAccounts;
 const ObituaryDB = dataBase.UserObituaries;
 const KeyContactsDB = dataBase.UserKeyContacts;
@@ -96,6 +97,9 @@ exports.signIn = async (req, res) => {
           model: MedicalEmergencyeDB,
         },
         {
+          model: FinancialEmergencyDB,
+        },
+        {
           model: AssetsAndAccountsDB,
         },
         {
@@ -172,6 +176,9 @@ exports.getUserById = async (req, res) => {
         },
         {
           model: MedicalEmergencyeDB,
+        },
+        {
+          model: FinancialEmergencyDB,
         },
         {
           model: AssetsAndAccountsDB,
@@ -357,6 +364,11 @@ exports.markOpened = async (req, res) => {
     } else if (cat === "medical") {
       await UserDB.update(
         { medicalEmergenciesOpened: true },
+        { where: { id: req.user.id } }
+      );
+    } else if (cat === "beneficiaries") {
+      await UserDB.update(
+        { beneficiariesOpened: true },
         { where: { id: req.user.id } }
       );
     } else {

@@ -15,5 +15,31 @@ router.post(
   authMiddleware,
   EstateController.saveVehicleRealEstate
 );
+router.post(
+  "/save/collectables",
+  authMiddleware,
+  EstateController.saveCollectablesEstate
+);
+router.post(
+  "/save/financialAccounts",
+  authMiddleware,
+  EstateController.saveFinancialAccounts
+);
+router.post(
+  "/save/businessInterests",
+  authMiddleware,
+  EstateController.saveBusinessInterests
+);
+router.post(
+  "/save/stocksBonds",
+  authMiddleware,
+  EstateController.saveStocksAndBonds
+);
+router.post(
+  "/save/debtsObligations",
+  authMiddleware,
+  EstateController.saveDebtsAndObligations
+);
+router.post("/save/other", authMiddleware, EstateController.saveOther);
 
 module.exports = router;

@@ -10,9 +10,8 @@ module.exports = (sequelize, DataTypes) => {
   UserObituaries.init(
     {
       userId: DataTypes.INTEGER,
-      obituary_uploadType: DataTypes.STRING,
-      obituary_text: DataTypes.STRING,
-      obituary_url: DataTypes.STRING,
+      subModuleType: DataTypes.STRING,
+      data: DataTypes.TEXT,
     },
     {
       sequelize,

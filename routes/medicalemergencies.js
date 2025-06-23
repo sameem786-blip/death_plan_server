@@ -7,7 +7,7 @@ const authMiddleware = require("../middlewares/checkAuth");
 router.post(
   "/save",
   authMiddleware,
-  MedicalEmergencyController.saveMedicalEmergency
+  MedicalEmergencyController.saveFinancialEmergencyPoa
 );
 
 module.exports = router;
