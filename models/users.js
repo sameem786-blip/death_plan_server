@@ -47,6 +47,7 @@ module.exports = (sequelize, DataTypes) => {
       stripeCustomerId: DataTypes.STRING,
       referralSource: DataTypes.STRING,
       referralSourceSpecification: DataTypes.STRING,
+      OTP: DataTypes.STRING,
       medicalEmergenciesOpened: DataTypes.BOOLEAN,
       financialEmergenciesOpened: DataTypes.BOOLEAN,
       beneficiariesOpened: DataTypes.BOOLEAN,

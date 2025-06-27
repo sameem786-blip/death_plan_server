@@ -4,6 +4,7 @@ const jwt = require("jsonwebtoken");
 const dataBase = require("../models");
 const { createNotification } = require("./notifications");
 const CryptoJS = require("crypto-js");
+const sendEmail = require("../helpers/sendEmail");
 
 const UserDB = dataBase.Users;
 const BeneficiaryDB = dataBase.Beneficiaries;
@@ -20,6 +21,14 @@ const ObituaryDB = dataBase.UserObituaries;
 const KeyContactsDB = dataBase.UserKeyContacts;
 const TransactionsDB = dataBase.TransactionHistories;
 const UploadsDB = dataBase.AdditionalUploads;
+
+const models = {
+  UserMedicalEmergencies: MedicalEmergencyeDB,
+  UserFinancialEmergencies: FinancialEmergencyDB,
+  AdditionalUploads: UploadsDB,
+  UserRealEstates: EstatesDB,
+  UserAssetsAndAccounts: AssetsAndAccountsDB,
+};
 
 const encrypt = (text) =>
   text ? CryptoJS.AES.encrypt(text, process.env.CRYPTO_SECRET).toString() : "";
@@ -272,6 +281,7 @@ exports.deleteWill = async (req, res) => {
     user.isWillStarted = false;
     user.financialEmergenciesOpened = false;
     user.medicalEmergenciesOpened = false;
+    user.beneficiariesOpened = false;
     user.nextStepsOpened = false;
 
     await user.save();
@@ -312,6 +322,16 @@ exports.deleteWill = async (req, res) => {
       },
     });
     await UploadsDB.destroy({
+      where: {
+        userId: user.id,
+      },
+    });
+    await MedicalEmergencyeDB.destroy({
+      where: {
+        userId: user.id,
+      },
+    });
+    await FinancialEmergencyDB.destroy({
       where: {
         userId: user.id,
       },
@@ -452,5 +472,214 @@ exports.addAdditionalUpload = async (req, res) => {
   } catch (err) {
     console.log(err);
     res.status(500).json("Internal Server Error.");
+  }
+};
+
+exports.deleteDocument = async (req, res) => {
+  const encryptField = (plainText) => {
+    if (!plainText || typeof plainText !== "string") return "";
+    return CryptoJS.AES.encrypt(
+      plainText,
+      process.env.CRYPTO_SECRET
+    ).toString();
+  };
+
+  const decryptField = (cipherText) => {
+    try {
+      if (!cipherText || typeof cipherText !== "string") return "";
+
+      const bytes = CryptoJS.AES.decrypt(cipherText, process.env.CRYPTO_SECRET);
+      const decrypted = bytes.toString(CryptoJS.enc.Utf8);
+
+      return decrypted || cipherText;
+    } catch (error) {
+      console.error("Decryption error:", error);
+      return cipherText;
+    }
+  };
+  try {
+    const { dbType, key, url } = req.body;
+    const userId = req.user.id;
+
+    const allowedTables = {
+      UserMedicalEmergencies: "UserMedicalEmergencies",
+      UserFinancialEmergencies: "UserFinancialEmergencies",
+      AdditionalUploads: "UploadsDB",
+      UserRealEstates: "UserRealEstates",
+      UserAssetsAndAccounts: "UserAssetsAndAccounts",
+    };
+
+    if (!models[dbType] || !url || (dbType !== "AdditionalUploads" && !key)) {
+      return res.status(400).json({ message: "Invalid parameters." });
+    }
+
+    const model = models[dbType];
+    if (!model) {
+      console.log("Hello", allowedTables[dbType]);
+      console.log("URL", url);
+      console.log("Hello", dbType);
+      console.log("Hello", key);
+      return res.status(400).json({ message: "Model not found." });
+    }
+
+    if (dbType === "AdditionalUploads") {
+      await model.destroy({
+        where: {
+          userId,
+          uploadUrl: url,
+        },
+      });
+    } else {
+      const whereClause = { userId };
+      if (["UserRealEstates", "UserAssetsAndAccounts"].includes(dbType)) {
+        whereClause.subModuleType = key;
+      }
+
+      const userData = await model.findOne({ where: whereClause });
+      if (!userData) {
+        return res.status(404).json({ message: "Record not found." });
+      }
+
+      if (
+        userData.data &&
+        ["UserRealEstates", "UserAssetsAndAccounts"].includes(dbType)
+      ) {
+        const parsed = JSON.parse(decryptField(userData.data) || "{}");
+        if (parsed.value !== url) {
+          return res.status(400).json({ message: "URL mismatch." });
+        }
+
+        parsed.uploadType = null;
+        parsed.value = null;
+
+        await model.update(
+          { data: encryptField(JSON.stringify(parsed)) },
+          { where: { id: userData.id } }
+        );
+      } else {
+        const decrypted = decryptField(userData[key]);
+        if (decrypted !== url) {
+          return res.status(400).json({ message: "URL mismatch." });
+        }
+
+        await model.update(
+          { [key]: encryptField("") },
+          { where: { id: userData.id } }
+        );
+      }
+    }
+
+    return res.status(200).json({ message: "Reference deleted." });
+  } catch (error) {
+    console.error("Delete error:", error);
+    return res.status(500).json({ message: "Internal server error." });
+  }
+};
+
+exports.sendOTP = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ message: "Email is required." });
+    }
+
+    const user = await UserDB.findOne({ where: { email } });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    const emailBody = `
+      <p>Hello,</p>
+      <p>Your verification code is:</p>
+      <h2>${otp}</h2>
+      <p>This code is valid for a limited time only.</p>
+    `;
+
+    await sendEmail(user.email, "Verification Code", emailBody);
+    await user.update({ OTP: otp });
+
+    return res.status(200).json({ message: "OTP sent to your email." });
+  } catch (error) {
+    console.error("OTP generation error:", error);
+    return res.status(500).json({ message: "Internal server error." });
+  }
+};
+
+exports.matchOTP = async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+
+    if (!email || !otp) {
+      return res.status(400).json({ message: "Email and OTP are required." });
+    }
+
+    const user = await UserDB.findOne({ where: { email } });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    if (user.OTP !== otp) {
+      return res.status(400).json({ message: "Invalid OTP." });
+    }
+
+    // Optional: clear OTP after successful match
+    await user.update({ OTP: null });
+
+    return res
+      .status(200)
+      .json({ message: "OTP verified successfully.", userId: user.id });
+  } catch (error) {
+    console.error("OTP match error:", error);
+    return res.status(500).json({ message: "Internal server error." });
+  }
+};
+
+exports.setNewPassword = async (req, res, next) => {
+  try {
+    const { userId, newPassword } = req.body;
+
+    if (!userId || !newPassword) {
+      console.log("Hello", userId, newPassword);
+      return res
+        .status(400)
+        .json({ message: "User ID and new password are required." });
+    }
+
+    const hashedPassword = await bcrypt.hash(
+      newPassword,
+      parseInt(process.env.ENCRYPTION_SALT)
+    );
+
+    const user = UserDB.findOne({
+      where: {
+        id: userId,
+      },
+    });
+
+    if (!user) {
+      return res
+        .status(404)
+        .json({ message: "User not found or update failed." });
+    }
+
+    await UserDB.update(
+      {
+        password: hashedPassword,
+        OTP: null,
+      },
+      {
+        where: { id: userId },
+      }
+    );
+
+    return res.status(200).json({ message: "Password updated successfully." });
+  } catch (error) {
+    console.error("setNewPassword error:", error);
+    next(error);
   }
 };

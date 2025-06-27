@@ -5,9 +5,14 @@ const MedicalEmergencyController = require("../controllers/medicalemergencies");
 const authMiddleware = require("../middlewares/checkAuth");
 
 router.post(
-  "/save",
+  "/financialPOA/save",
   authMiddleware,
   MedicalEmergencyController.saveFinancialEmergencyPoa
+);
+router.post(
+  "/save",
+  authMiddleware,
+  MedicalEmergencyController.saveMedicalEmergencyPoa
 );
 
 module.exports = router;
