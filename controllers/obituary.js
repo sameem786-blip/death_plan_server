@@ -56,23 +56,23 @@ exports.savePreferences = async (req, res) => {
 exports.saveObituary = async (req, res) => {
   try {
     const userId = req.user?.id;
-    const { story } = req.body;
+    const { story, uploadType, value } = req.body;
 
-    if (!userId || !story) {
+    if (!userId || (!story && !value)) {
       return res
         .status(400)
-        .json({ message: "Missing user or preferences data." });
+        .json({ message: "Missing user or obituary content." });
     }
 
-    const encrypt = (value) =>
-      value
+    const encrypt = (data) =>
+      data
         ? CryptoJS.AES.encrypt(
-            JSON.stringify(value),
+            JSON.stringify(data),
             process.env.CRYPTO_SECRET
           ).toString()
         : "";
 
-    const encryptedData = encrypt(story);
+    const encryptedData = encrypt({ story, uploadType, value });
     const encryptedSubModuleType = "obituary";
 
     let record = await ObituaryDB.findOne({
@@ -91,13 +91,13 @@ exports.saveObituary = async (req, res) => {
 
     await createNotification(
       userId,
-      "Burial Preferences Saved",
-      "Your burial and obituary preferences have been saved successfully."
+      "Obituary Saved",
+      "Your obituary has been saved successfully."
     );
 
     return res.status(200).json({ success: true, obituary: record });
   } catch (error) {
-    console.error("Error saving burial preferences:", error);
+    console.error("Error saving obituary:", error);
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };
