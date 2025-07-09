@@ -5,8 +5,8 @@ const sendEmail = async (to, subject, body, attachments = []) => {
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
-        user: "bkfl1122@gmail.com", // Use from Amazon Credentials
-        pass: "roaiyleygibfbtuq", // Use from Amazon Credentials
+        user: "JJRNORMAN@gmail.com ", // Use from Amazon Credentials
+        pass: "xqao crlk gtsu xbrp", // Use from Amazon Credentials
       },
     });
 
