@@ -14,6 +14,8 @@ module.exports = (sequelize, DataTypes) => {
       insuranceCompany: DataTypes.STRING,
       policyNumber: DataTypes.STRING,
       beneficiary: DataTypes.STRING,
+      uploadType: DataTypes.TEXT,
+      value: DataTypes.TEXT,
     },
     {
       sequelize,

@@ -1,13 +1,7 @@
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
 const CryptoJS = require("crypto-js");
-
 const dataBase = require("../models");
 const { createNotification } = require("./notifications");
 
-const UserDB = dataBase.Users;
-const NotificationDB = dataBase.Notifications;
-const EstatesDB = dataBase.UserRealEstates;
 const DebtsDB = dataBase.UserDebts;
 
 exports.saveDebts = async (req, res) => {
@@ -15,29 +9,29 @@ exports.saveDebts = async (req, res) => {
     const userId = req.user.id;
     const data = req.body;
 
-    console.log("User", data);
-
-    await DebtsDB.destroy({
-      where: { userId },
-    });
-
-    let debts = [];
+    await DebtsDB.destroy({ where: { userId } });
 
     const encrypt = (text) =>
       text
         ? CryptoJS.AES.encrypt(text, process.env.CRYPTO_SECRET).toString()
         : "";
+
+    const debts = [];
+
     for (const debt of data.debts) {
       const newDebt = await DebtsDB.create({
-        userId: userId,
+        userId,
         creditorPhone: encrypt(debt.creditorPhone),
         creditorName: encrypt(debt.creditorName),
         creditorAddress: encrypt(debt.creditorAddress),
-        creditorAccountNumber: encrypt(debt.accountNumbe),
+        creditorAccountNumber: encrypt(debt.accountNumber),
         paymentAmount: encrypt(debt.paymentAmount),
         balance: encrypt(debt.balance),
-        dueDate: debt.dueDate,
-        insured: debt.creditInsured,
+        dueDate: debt.dueDate || null,
+        insured: debt.creditInsurance || false,
+        text: encrypt(debt.text || ""),
+        uploadType: debt.uploadType || "attachment",
+        value: debt.value || "",
       });
 
       debts.push(newDebt);
@@ -49,7 +43,7 @@ exports.saveDebts = async (req, res) => {
       "Your real debts data has been saved."
     );
 
-    return res.status(200).json({ success: true, debts: debts });
+    return res.status(200).json({ success: true, debts });
   } catch (error) {
     console.error("Error saving debts:", error);
     return res.status(500).json({ message: "Internal Server Error" });

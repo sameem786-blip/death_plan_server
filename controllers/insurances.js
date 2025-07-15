@@ -26,20 +26,19 @@ exports.saveInsurances = async (req, res) => {
         ? CryptoJS.AES.encrypt(text, process.env.CRYPTO_SECRET).toString()
         : "";
 
-    // Delete existing policies for user (optional, or soft delete if needed)
     await InsuranceDB.destroy({ where: { userId } });
 
-    // Prepare encrypted entries
-    const encryptedPolicies = policies.map((policy) => ({
+    const enriched = policies.map((policy) => ({
       userId,
       policyType: encrypt(policy.policyType),
       insuranceCompany: encrypt(policy.insuranceCompany),
       policyNumber: encrypt(policy.policyNumber),
       beneficiary: encrypt(policy.beneficiary),
+      uploadType: policy.uploadType || "attachment",
+      value: policy.value || "",
     }));
 
-    // Bulk insert
-    await InsuranceDB.bulkCreate(encryptedPolicies);
+    await InsuranceDB.bulkCreate(enriched);
 
     await createNotification(
       userId,

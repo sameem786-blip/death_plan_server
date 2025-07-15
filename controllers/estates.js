@@ -9,19 +9,22 @@ const UserDB = dataBase.Users;
 const NotificationDB = dataBase.Notifications;
 const EstatesDB = dataBase.UserRealEstates;
 
-// POST /estates/save/step
 exports.saveLandRealEstate = async (req, res) => {
   try {
     const userId = req.user.id;
     const { properties } = req.body;
+
+    if (!Array.isArray(properties)) {
+      return res.status(400).json({ message: "Invalid data format." });
+    }
 
     const encrypt = (value) =>
       value
         ? CryptoJS.AES.encrypt(value, process.env.CRYPTO_SECRET).toString()
         : "";
 
-    const subModuleTypePlain = "land_real_estate";
     const encryptedData = encrypt(JSON.stringify(properties));
+    const subModuleTypePlain = "land_real_estate";
 
     const existing = await EstatesDB.findOne({
       where: { userId, subModuleType: subModuleTypePlain },

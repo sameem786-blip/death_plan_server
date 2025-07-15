@@ -18,6 +18,9 @@ module.exports = (sequelize, DataTypes) => {
       paymentAmount: DataTypes.STRING,
       balance: DataTypes.STRING,
       dueDate: DataTypes.DATEONLY,
+      text: DataTypes.TEXT,
+      uploadType: DataTypes.TEXT,
+      value: DataTypes.TEXT,
     },
     {
       sequelize,
