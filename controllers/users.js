@@ -14,7 +14,7 @@ const NotificationDB = dataBase.Notifications;
 const EstatesDB = dataBase.UserRealEstates;
 const DebtsDB = dataBase.UserDebts;
 const InsuranceDB = dataBase.UserInsurances;
-const MedicalEmergencyeDB = dataBase.UserMedicalEmergencies;
+const MedicalEmergencyDB = dataBase.UserMedicalEmergencies;
 const FinancialEmergencyDB = dataBase.UserFinancialEmergencies;
 const AssetsAndAccountsDB = dataBase.UserAssetsAndAccounts;
 const ObituaryDB = dataBase.UserObituaries;
@@ -23,7 +23,7 @@ const TransactionsDB = dataBase.TransactionHistories;
 const UploadsDB = dataBase.AdditionalUploads;
 
 const models = {
-  UserMedicalEmergencies: MedicalEmergencyeDB,
+  UserMedicalEmergencies: MedicalEmergencyDB,
   UserFinancialEmergencies: FinancialEmergencyDB,
   AdditionalUploads: UploadsDB,
   UserRealEstates: EstatesDB,
@@ -103,7 +103,7 @@ exports.signIn = async (req, res) => {
           model: InsuranceDB,
         },
         {
-          model: MedicalEmergencyeDB,
+          model: MedicalEmergencyDB,
         },
         {
           model: FinancialEmergencyDB,
@@ -184,7 +184,7 @@ exports.getUserById = async (req, res) => {
           model: UploadsDB,
         },
         {
-          model: MedicalEmergencyeDB,
+          model: MedicalEmergencyDB,
         },
         {
           model: FinancialEmergencyDB,
@@ -476,14 +476,6 @@ exports.addAdditionalUpload = async (req, res) => {
 };
 
 exports.deleteDocument = async (req, res) => {
-  const encryptField = (plainText) => {
-    if (!plainText || typeof plainText !== "string") return "";
-    return CryptoJS.AES.encrypt(
-      plainText,
-      process.env.CRYPTO_SECRET
-    ).toString();
-  };
-
   const decryptField = (cipherText) => {
     try {
       if (!cipherText || typeof cipherText !== "string") return "";
@@ -498,77 +490,230 @@ exports.deleteDocument = async (req, res) => {
     }
   };
   try {
-    const { dbType, key, url } = req.body;
-    const userId = req.user.id;
+    const { key: type, value: url } = req.body;
 
-    const allowedTables = {
-      UserMedicalEmergencies: "UserMedicalEmergencies",
-      UserFinancialEmergencies: "UserFinancialEmergencies",
-      AdditionalUploads: "UploadsDB",
-      UserRealEstates: "UserRealEstates",
-      UserAssetsAndAccounts: "UserAssetsAndAccounts",
-    };
-
-    if (!models[dbType] || !url || (dbType !== "AdditionalUploads" && !key)) {
-      return res.status(400).json({ message: "Invalid parameters." });
-    }
-
-    const model = models[dbType];
-    if (!model) {
-      console.log("Hello", allowedTables[dbType]);
-      console.log("URL", url);
-      console.log("Hello", dbType);
-      console.log("Hello", key);
-      return res.status(400).json({ message: "Model not found." });
-    }
-
-    if (dbType === "AdditionalUploads") {
-      await model.destroy({
+    if (type.includes("real_estate_")) {
+      subModule = type.replace("real_estate_", "");
+      const record = await EstatesDB.findOne({
         where: {
-          userId,
+          userId: req.user.id,
+          subModuleType: subModule,
+        },
+      });
+
+      console.log("Estate", record);
+
+      if (record) {
+        const decryptedRecord = JSON.parse(decryptField(record.data));
+        console.log("Decrypted Record", decryptedRecord);
+
+        let updatedData = decryptedRecord;
+
+        console.log("Updated Data", updatedData);
+
+        updatedData.forEach((item) => {
+          if (item.value === url) {
+            console.log("Deleting URL:", item);
+            (item.mode = ""),
+              (item.file = null),
+              (item.fileUrl = null),
+              (item.audioUrl = null),
+              (item.audioBlob = null),
+              (item.videoUrl = null),
+              (item.videoBlob = null),
+              (item.value = null),
+              (item.uploadType = null);
+          }
+        });
+
+        console.log("Updated Data After Deletion", updatedData);
+
+        const encryptedData = encrypt(JSON.stringify(updatedData));
+
+        // Save back
+        await EstatesDB.update(
+          {
+            data: encryptedData,
+          },
+          { where: { id: record.id } }
+        );
+      }
+    }
+    if (type.includes("debts")) {
+      const record = await DebtsDB.findOne({
+        where: {
+          userId: req.user.id,
+          value: url,
+        },
+      });
+
+      console.log("Estate", record);
+
+      if (record) {
+        console.log("Deleting URL:", record);
+        record.uploadType = "";
+        record.value = "";
+        await record.save();
+      }
+    }
+    if (type.includes("insurance")) {
+      const record = await InsuranceDB.findOne({
+        where: {
+          userId: req.user.id,
+          value: url,
+        },
+      });
+
+      console.log("Estate", record);
+
+      if (record) {
+        console.log("Deleting URL:", record);
+        record.uploadType = "";
+        record.value = "";
+        await record.save();
+      }
+    }
+
+    if (type.includes("medical")) {
+      await MedicalEmergencyDB.destroy({
+        where: {
+          userId: req.user.id,
+        },
+      });
+    }
+    if (type.includes("financial")) {
+      await FinancialEmergencyDB.destroy({
+        where: {
+          userId: req.user.id,
+        },
+      });
+    }
+    if (type.includes("assets_")) {
+      subModule = type.replace("assets_", "");
+      const record = await AssetsAndAccountsDB.findOne({
+        where: {
+          userId: req.user.id,
+          subModuleType: subModule,
+        },
+      });
+
+      console.log("Estate", record);
+
+      if (record) {
+        const decryptedRecord = JSON.parse(decryptField(record.data));
+        console.log("Decrypted Record", decryptedRecord);
+
+        let updatedData = decryptedRecord;
+
+        console.log("Updated Data", updatedData);
+
+        updatedData.forEach((item) => {
+          if (item.value === url) {
+            console.log("Deleting URL:", item);
+            (item.mode = ""),
+              (item.file = null),
+              (item.fileUrl = null),
+              (item.audioUrl = null),
+              (item.audioBlob = null),
+              (item.videoUrl = null),
+              (item.videoBlob = null),
+              (item.value = null),
+              (item.uploadType = null);
+          }
+        });
+
+        console.log("Updated Data After Deletion", updatedData);
+
+        const encryptedData = encrypt(JSON.stringify(updatedData));
+
+        // Save back
+        await AssetsAndAccountsDB.update(
+          {
+            data: encryptedData,
+          },
+          { where: { id: record.id } }
+        );
+      }
+    }
+    if (type.includes("obituary")) {
+      const record = await ObituaryDB.findOne({
+        where: {
+          userId: req.user.id,
+          subModuleType: "obituary",
+        },
+      });
+
+      console.log("Obituary", record);
+
+      const decryptedRecord = JSON.parse(decryptField(record.data));
+      console.log("Obituary", decryptedRecord);
+
+      decryptedRecord.uploadType = "";
+      decryptedRecord.value = "";
+
+      await ObituaryDB.update(
+        {
+          data: encrypt(JSON.stringify(decryptedRecord)),
+        },
+        { where: { id: record.id } }
+      );
+    }
+
+    if (type.includes("contacts_")) {
+      subModule = type.replace("contacts_", "");
+      const record = await KeyContactsDB.findOne({
+        where: {
+          userId: req.user.id,
+          subModuleType: subModule,
+        },
+      });
+
+      console.log("Estate", record);
+
+      if (record) {
+        const decryptedRecord = JSON.parse(decryptField(record.data));
+        console.log("Decrypted Record", decryptedRecord);
+
+        let updatedData = decryptedRecord;
+
+        console.log("Updated Data", updatedData);
+
+        updatedData.forEach((item) => {
+          if (item.value === url) {
+            console.log("Deleting URL:", item);
+            (item.mode = ""),
+              (item.file = null),
+              (item.fileUrl = null),
+              (item.audioUrl = null),
+              (item.audioBlob = null),
+              (item.videoUrl = null),
+              (item.videoBlob = null),
+              (item.value = null),
+              (item.uploadType = null);
+          }
+        });
+
+        console.log("Updated Data After Deletion", updatedData);
+
+        const encryptedData = encrypt(JSON.stringify(updatedData));
+
+        // Save back
+        await KeyContactsDB.update(
+          {
+            data: encryptedData,
+          },
+          { where: { id: record.id } }
+        );
+      }
+    }
+    if (type.includes("additional")) {
+      await UploadsDB.destroy({
+        where: {
+          userId: req.user.id,
           uploadUrl: url,
         },
       });
-    } else {
-      const whereClause = { userId };
-      if (["UserRealEstates", "UserAssetsAndAccounts"].includes(dbType)) {
-        whereClause.subModuleType = key;
-      }
-
-      const userData = await model.findOne({ where: whereClause });
-      if (!userData) {
-        return res.status(404).json({ message: "Record not found." });
-      }
-
-      if (
-        userData.data &&
-        ["UserRealEstates", "UserAssetsAndAccounts"].includes(dbType)
-      ) {
-        const parsed = JSON.parse(decryptField(userData.data) || "{}");
-        if (parsed.value !== url) {
-          return res.status(400).json({ message: "URL mismatch." });
-        }
-
-        parsed.uploadType = null;
-        parsed.value = null;
-
-        await model.update(
-          { data: encryptField(JSON.stringify(parsed)) },
-          { where: { id: userData.id } }
-        );
-      } else {
-        const decrypted = decryptField(userData[key]);
-        if (decrypted !== url) {
-          return res.status(400).json({ message: "URL mismatch." });
-        }
-
-        await model.update(
-          { [key]: encryptField("") },
-          { where: { id: userData.id } }
-        );
-      }
     }
-
     return res.status(200).json({ message: "Reference deleted." });
   } catch (error) {
     console.error("Delete error:", error);
