@@ -35,51 +35,52 @@ const encrypt = (text) =>
 
 exports.SignUp = async (req, res) => {
   try {
-    const { firstName, lastName, password, avatar, email } = req.body;
+    let { firstName, lastName, password, avatar, email } = req.body;
 
     if (!password || !email) {
-      res.status(400).json("Missing fields");
-    } else {
-      const existingUser = await UserDB.findOne({
-        where: {
-          email,
-        },
-      });
-
-      if (existingUser) {
-        return res.status(400).json("User with this email already exists");
-      }
-      const role = "user";
-      const encryptedPassword = await bcrypt.hash(
-        password,
-        parseInt(process.env.ENCRYPTION_SALT)
-      );
-
-      console.log("Pass", encryptedPassword);
-
-      const newUser = await UserDB.create({
-        email,
-        role,
-        encryptedPassword,
-      });
-
-      await createNotification(
-        newUser.id,
-        "New User Sign Up",
-        "You account was created successfully."
-      );
-
-      res.status(200).json({ message: "User created successfully", newUser });
+      return res.status(400).json("Missing fields");
     }
+
+    email = email.toLowerCase();
+
+    const existingUser = await UserDB.findOne({
+      where: { email },
+    });
+
+    if (existingUser) {
+      return res.status(400).json("User with this email already exists");
+    }
+
+    const role = "user";
+    const encryptedPassword = await bcrypt.hash(
+      password,
+      parseInt(process.env.ENCRYPTION_SALT)
+    );
+
+    const newUser = await UserDB.create({
+      email,
+      role,
+      encryptedPassword,
+    });
+
+    await createNotification(
+      newUser.id,
+      "New User Sign Up",
+      "You account was created successfully."
+    );
+
+    return res
+      .status(200)
+      .json({ message: "User created successfully", newUser });
   } catch (error) {
-    console.log("Error during signup", error);
-    return res.status(500).json("Internal Server Error", error);
+    console.error("Error during signup", error);
+    return res.status(500).json("Internal Server Error");
   }
 };
 
 exports.signIn = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    let { email, password } = req.body;
 
     if (!email || !password) {
       return res
@@ -87,46 +88,24 @@ exports.signIn = async (req, res) => {
         .json({ message: "Email and password are required" });
     }
 
+    email = email.toLowerCase();
+
     const user = await UserDB.findOne({
       where: { email },
       include: [
-        {
-          model: BeneficiaryDB,
-        },
-        {
-          model: EstatesDB,
-        },
-        {
-          model: DebtsDB,
-        },
-        {
-          model: InsuranceDB,
-        },
-        {
-          model: MedicalEmergencyDB,
-        },
-        {
-          model: FinancialEmergencyDB,
-        },
-        {
-          model: AssetsAndAccountsDB,
-        },
-        {
-          model: ObituaryDB,
-        },
-        {
-          model: KeyContactsDB,
-        },
-        {
-          model: UploadsDB,
-        },
+        { model: BeneficiaryDB },
+        { model: EstatesDB },
+        { model: DebtsDB },
+        { model: InsuranceDB },
+        { model: MedicalEmergencyDB },
+        { model: FinancialEmergencyDB },
+        { model: AssetsAndAccountsDB },
+        { model: ObituaryDB },
+        { model: KeyContactsDB },
+        { model: UploadsDB },
         {
           model: SubscriptionsDB,
-          include: [
-            {
-              model: PackagesDB,
-            },
-          ],
+          include: [{ model: PackagesDB }],
         },
       ],
     });
