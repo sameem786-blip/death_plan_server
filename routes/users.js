@@ -21,5 +21,22 @@ router.post(
   checkAuth,
   userController.addAdditionalUpload
 );
+router.get("/skillprofile/redirect", (req, res) => {
+  const deeplink = `org.skillprofile://auth`;
+
+  res.send(`
+    <html>
+      <head>
+        <meta http-equiv="refresh" content="0; url='${deeplink}'" />
+        <script>
+          window.location.href = '${deeplink}';
+        </script>
+      </head>
+      <body>
+        <p>Redirecting...</p>
+      </body>
+    </html>
+  `);
+});
 
 module.exports = router;
