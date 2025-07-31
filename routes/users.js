@@ -22,7 +22,11 @@ router.post(
   userController.addAdditionalUpload
 );
 router.get("/skillprofile/redirect", (req, res) => {
-  const deeplink = `org.skillprofile://auth`;
+  const { code, state } = req.query;
+
+  // Encode to safely pass in URL
+  const encodedParams = new URLSearchParams({ code, state }).toString();
+  const deeplink = `org.skillprofile://auth?${encodedParams}`;
 
   res.send(`
     <html>
@@ -33,7 +37,8 @@ router.get("/skillprofile/redirect", (req, res) => {
         </script>
       </head>
       <body>
-        <p>Redirecting...</p>
+        <p>Redirecting to app...</p>
+        <a href="${deeplink}">Tap here if you are not redirected</a>
       </body>
     </html>
   `);
