@@ -216,7 +216,8 @@ exports.updateUser = async (req, res) => {
       contact: req.body.contact,
       referralSource: req.body.referralSource,
       referralSourceSpecification: req.body.referralSourceSpecification,
-      // gender: req.body.gender,
+      gender: req.body.gender,
+      avatar: req.body.avatar,
     };
 
     if (req.body.newPassword && req.body.currentPassword) {
@@ -305,7 +306,7 @@ exports.deleteWill = async (req, res) => {
         userId: user.id,
       },
     });
-    await MedicalEmergencyeDB.destroy({
+    await MedicalEmergencyDB.destroy({
       where: {
         userId: user.id,
       },

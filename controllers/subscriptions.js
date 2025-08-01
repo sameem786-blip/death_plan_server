@@ -122,7 +122,7 @@ exports.savePaymentMethod = async (req, res) => {
 
 exports.createStripeSubscription = async (req, res) => {
   try {
-    const { userId, packageId } = req.body;
+    const { userId, packageId, billingCycle } = req.body;
 
     if (!userId || !packageId) {
       return res
@@ -130,9 +130,20 @@ exports.createStripeSubscription = async (req, res) => {
         .json({ message: "userId and packageId are required" });
     }
 
-    const selectedPackage = await PackageDB.findOne({
-      where: { id: packageId },
-    });
+    let selectedPackage;
+    if (billingCycle === "annual") {
+      selectedPackage = {
+        id: packageId,
+        stripePriceId: process.env.STRIPE_ANNUAL_PRICE_ID,
+        billingCycle: "annual",
+      };
+    } else {
+      selectedPackage = {
+        id: packageId,
+        stripePriceId: process.env.STRIPE_MONTHLY_PRICE_ID,
+        billingCycle: "monthly",
+      };
+    }
 
     if (!selectedPackage || !selectedPackage.stripePriceId) {
       return res
