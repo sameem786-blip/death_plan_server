@@ -119,6 +119,14 @@ exports.signIn = async (req, res) => {
       return res.status(401).json({ message: "Invalid Password" });
     }
 
+    if (user.isArchived) {
+      return res
+        .status(400)
+        .json({
+          message: "Your access has been disabled. Please contact admin.",
+        });
+    }
+
     const token = jwt.sign(
       { id: user.id, email: user.email },
       process.env.JWT_SECRET,
@@ -324,6 +332,41 @@ exports.deleteWill = async (req, res) => {
   }
 };
 
+exports.archiveUser = async (req, res) => {
+  try {
+    const user = await UserDB.findOne({
+      where: {
+        id: req.query.userId,
+      },
+    });
+
+    user.isArchived = true;
+    await user.save();
+
+    return res.status(200).json("User archived successfully");
+  } catch (err) {
+    console.log("Error during signin", err);
+    return res.status(500).json("Internal Server Error");
+  }
+};
+exports.unarchiveUser = async (req, res) => {
+  try {
+    const user = await UserDB.findOne({
+      where: {
+        id: req.query.userId,
+      },
+    });
+
+    user.isArchived = false;
+    await user.save();
+
+    return res.status(200).json("User unarchived successfully");
+  } catch (err) {
+    console.log("Error during signin", err);
+    return res.status(500).json("Internal Server Error");
+  }
+};
+
 exports.markWillStarted = async (req, res) => {
   try {
     await UserDB.update(
@@ -415,6 +458,7 @@ exports.fetchUsersForAdmin = async (req, res) => {
         "email",
         "avatar",
         "isWillStarted",
+        "isArchived",
       ],
       include: [
         {

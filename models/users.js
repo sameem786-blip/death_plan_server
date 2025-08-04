@@ -52,6 +52,7 @@ module.exports = (sequelize, DataTypes) => {
       financialEmergenciesOpened: DataTypes.BOOLEAN,
       beneficiariesOpened: DataTypes.BOOLEAN,
       nextStepsOpened: DataTypes.BOOLEAN,
+      isArchived: DataTypes.BOOLEAN,
     },
     {
       sequelize,
