@@ -120,11 +120,9 @@ exports.signIn = async (req, res) => {
     }
 
     if (user.isArchived) {
-      return res
-        .status(400)
-        .json({
-          message: "Your access has been disabled. Please contact admin.",
-        });
+      return res.status(400).json({
+        message: "Your access has been disabled. Please contact admin.",
+      });
     }
 
     const token = jwt.sign(
@@ -468,6 +466,11 @@ exports.fetchUsersForAdmin = async (req, res) => {
               model: PackagesDB,
             },
           ],
+        },
+        {
+          model: TransactionsDB,
+          order: [["createdAt", "DESC"]],
+          limit: 1,
         },
       ],
     });
